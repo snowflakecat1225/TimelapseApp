@@ -7,12 +7,12 @@ namespace TimelapseApp
     {
         public static void Main(string[] args)
         {
-            /*if (args.Length == 3 && args.ContainsOnlyNumbers())
+            if (args.Length == 3 && args.ContainsOnlyNumbers())
                 TimelapseScript.Run(
                     int.Parse(args[0]),
                     int.Parse(args[1]),
                     int.Parse(args[2]));
-            else Console.WriteLine("Ok");*/
+            else MainWindow.Init();
             
             /*FFmpeg.Recording(
                 "rtsp://link",
@@ -21,9 +21,6 @@ namespace TimelapseApp
             
             Task.Delay(5000).Wait();
             System.Console.WriteLine("I'm gay!!!");*/
-
-            Console.WriteLine(Environment.GetFolderPath(Environment.SpecialFolder.AdminTools));
-            
         }
     }
 }
