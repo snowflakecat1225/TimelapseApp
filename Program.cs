@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 
 namespace TimelapseApp
 {
@@ -21,7 +22,8 @@ namespace TimelapseApp
             Task.Delay(5000).Wait();
             System.Console.WriteLine("I'm gay!!!");*/
 
-            MainWindow.Init();
+            Console.WriteLine(Environment.GetFolderPath(Environment.SpecialFolder.AdminTools));
+            
         }
     }
 }

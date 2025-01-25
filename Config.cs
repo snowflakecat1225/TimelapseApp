@@ -5,16 +5,14 @@ namespace TimelapseApp
 {
     public class Config
     {
-        private static readonly string _configPath = $"/home/{Environment.UserName}/.config/TimelapseApp.conf";
+        private static readonly string _configPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/TimelapseApp.conf";
         
         public static void Create(string sourceLink, string resultPath, bool localTimeChecked)
         {
             try
             {
-                if (File.Exists(_configPath))
-                    File.Delete(_configPath);
                 using StreamWriter sw = new(_configPath);
-                    sw.WriteLine(sourceLink + "\n" + resultPath + "\n" + localTimeChecked);
+                sw.WriteLine(sourceLink + "\n" + resultPath + "\n" + localTimeChecked);
             }
             catch (IOException ex)
             {

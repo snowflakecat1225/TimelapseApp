@@ -24,6 +24,7 @@ namespace TimelapseApp
                 MessageType.Error,
                 ButtonsType.Close,
                 "You're adopted");
+            md.Destroyed += delegate { Environment.Exit(0); };
             md.Run();
             md.Destroy();
 
