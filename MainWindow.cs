@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Net.Sockets;
 using Gtk;
 
 namespace TimelapseApp
@@ -7,23 +8,35 @@ namespace TimelapseApp
     class MainWindow
     {
         private static Window _mainWindow;
+        private static Window _settingsWindow;
         private static Entry _rtspEntry;
         private static Entry _saveEntry;
+
+        [Obsolete]
         public static void Init()
         {
             Application.Init();
 
+            MainWindowInit();
+            SettingsWindowInit();
+
+            Application.Run();
+        }
+
+        [Obsolete]
+        private static void MainWindowInit()
+        {
             _mainWindow = new("Timelapse App");
             _mainWindow.Destroyed += delegate { Application.Quit(); };
             
-            Box mainBox = new(Orientation.Vertical, 15)
+            Box box = new(Orientation.Vertical, 15)
             {
                 Margin = 45,
                 MarginTop = 20,
                 MarginBottom = 15,
                 WidthRequest = 320
             };
-            _mainWindow.Add(mainBox);
+            _mainWindow.Add(box);
             
             Box rtspEntryBox = new(Orientation.Vertical, 10);
             Label rtspLabel = new()
@@ -44,7 +57,7 @@ namespace TimelapseApp
             rtspEntryBox.Add(rtspLabel);
             rtspEntryBox.Add(_rtspEntry);
             rtspEntryBox.Add(ffplayButton);
-            mainBox.Add(rtspEntryBox);
+            box.Add(rtspEntryBox);
 
             Box saveEntryBox = new(Orientation.Vertical, 10);
             Label saveLabel = new()
@@ -66,40 +79,83 @@ namespace TimelapseApp
             saveEntryBox.Add(saveLabel);
             saveEntryBox.Add(_saveEntry);
             saveEntryBox.Add(openFolderViewButton);
-            mainBox.Add(saveEntryBox);
+            box.Add(saveEntryBox);
             
-            Box startRecordingBox = new(Orientation.Vertical, 10);
-            Separator separator1 = new(Orientation.Horizontal);
+            HBox commonBox = new(true, 0);
+            HBox box1 = new();
+            HBox box2 = new();
+            HBox box3 = new();
             Button startButton = new() 
             {
                 Label = "Start recording",
                 Halign = Align.Center
             };
             startButton.Clicked += StartButton_Clicked;
+            box2.Add(startButton);
+            Button openSettingsButton = new()
+            {
+                Halign = Align.End
+            };
+            box3.Add(openSettingsButton);
+            commonBox.Add(box1);
+            commonBox.Add(box2);
+            commonBox.Add(box3);
+
+            Box startRecordingBox = new(Orientation.Vertical, 10);
+            Separator separator1 = new(Orientation.Horizontal);
             Separator separator2 = new(Orientation.Horizontal);
             startRecordingBox.Add(separator1);
-            startRecordingBox.Add(startButton);
+            startRecordingBox.Add(commonBox);
             startRecordingBox.Add(separator2);
-            mainBox.PackEnd(startRecordingBox, false, false, 10);
-            
-            _mainWindow.ShowAll();
+            box.PackEnd(startRecordingBox, false, false, 10);
 
-            Application.Run();
+            _mainWindow.ShowAll();
+        }
+
+        private static void SettingsWindowInit()
+        {
+            _settingsWindow = new("Settings");
+
+            Box box = new(Orientation.Vertical, 15)
+            {
+                Margin = 45,
+                MarginTop = 20,
+                MarginBottom = 15,
+                WidthRequest = 320
+            };
+            _settingsWindow.Add(box);
         }
 
         private async static void FfplayButton_Clicked(object sender, EventArgs e)
         {
             if (!string.IsNullOrEmpty(_rtspEntry.Text))
             {
-                ProcessStartInfo startInfo = new()
+                if (_rtspEntry.Text.StartsWith("rtsp://"))
                 {
-                    FileName = "/usr/bin/ffplay",
-                    Arguments = "-rtsp_transport tcp -b:v 100 -tune zerolatency -preset ultrafast -an " + _rtspEntry.Text
-                };
+                    if (IsRtspLinkValid(_rtspEntry.Text))
+                    {
+                        ProcessStartInfo startInfo = new()
+                        {
+                            FileName = "/usr/bin/ffplay",
+                            Arguments = "-rtsp_transport tcp -b:v 100 -tune zerolatency -preset ultrafast -an " + _rtspEntry.Text
+                        };
 
-                var ffplay = Process.Start(startInfo)!;
-                
-                await ffplay.WaitForExitAsync();
+                        var ffplay = Process.Start(startInfo)!;
+                        
+                        await ffplay.WaitForExitAsync();
+                    }
+                }
+                else
+                {
+                    MessageDialog md = new(
+                        _mainWindow,
+                        DialogFlags.Modal,
+                        MessageType.Error,
+                        ButtonsType.Close,
+                        "This is not RTSP-link");
+                    md.Run();
+                    md.Destroy();
+                }
             }
             else
             {
@@ -118,7 +174,7 @@ namespace TimelapseApp
         {
             FileChooserDialog fileChooser = new(
                 "Select the path to save the file",
-                null,
+                _mainWindow,
                 FileChooserAction.SelectFolder,
                 "Cancel", ResponseType.Cancel,
                 "Open", ResponseType.Accept)
@@ -133,6 +189,42 @@ namespace TimelapseApp
                 _saveEntry.Text = fileChooser.CurrentFolder;
 
             fileChooser.Destroy();
+        }
+
+        private static bool IsRtspLinkValid(string link)
+        {
+            try
+            {
+                var uri = new Uri(link);
+                var host = uri.Host;
+                MessageDialog md = new(
+                    _mainWindow,
+                    DialogFlags.Modal,
+                    MessageType.Error,
+                    ButtonsType.Close,
+                    uri.UserInfo);
+                md.Run();
+                md.Destroy();
+                var port = uri.Port == -1 ? 554 : uri.Port;
+
+                using var client = new TcpClient();
+                client.Connect(host, port);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageDialog md = new(
+                    _mainWindow,
+                    DialogFlags.Modal,
+                    MessageType.Error,
+                    ButtonsType.Close,
+                    ex.Message);
+                md.Run();
+                md.Destroy();
+
+                return false;
+            }
         }
 
         private static void StartButton_Clicked(object sender, EventArgs e)

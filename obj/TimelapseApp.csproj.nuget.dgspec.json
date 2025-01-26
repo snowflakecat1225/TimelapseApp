@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/snowflakecat/Downloads/TimelapseApp/TimelapseApp.csproj": {}
+    "/home/snowflakecat/Documents/Programs/TimelapseApp/TimelapseApp.csproj": {}
   },
   "projects": {
-    "/home/snowflakecat/Downloads/TimelapseApp/TimelapseApp.csproj": {
+    "/home/snowflakecat/Documents/Programs/TimelapseApp/TimelapseApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/snowflakecat/Downloads/TimelapseApp/TimelapseApp.csproj",
+        "projectUniqueName": "/home/snowflakecat/Documents/Programs/TimelapseApp/TimelapseApp.csproj",
         "projectName": "TimelapseApp",
-        "projectPath": "/home/snowflakecat/Downloads/TimelapseApp/TimelapseApp.csproj",
+        "projectPath": "/home/snowflakecat/Documents/Programs/TimelapseApp/TimelapseApp.csproj",
         "packagesPath": "/home/snowflakecat/.nuget/packages/",
-        "outputPath": "/home/snowflakecat/Downloads/TimelapseApp/obj/",
+        "outputPath": "/home/snowflakecat/Documents/Programs/TimelapseApp/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/snowflakecat/.nuget/NuGet/NuGet.Config"

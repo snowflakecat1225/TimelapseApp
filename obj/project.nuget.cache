@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "ehOj7vKqnaLbEBxuE1ZR/trRs7+xiby6EwsM4Weq/0xxo4A0jxYCoooSlrBqcHOUeAiSjZ/4e8OXpZRf0beXXQ==",
+  "dgSpecHash": "zTE0MwbeIWstiEFx6VCgOuIRE/2SkhPjYNP7OUDin9h3JeLLSJLANgoVxvDIInZuqpIp9Gg1JKFn90WuGoxufw==",
   "success": true,
-  "projectFilePath": "/home/snowflakecat/Downloads/TimelapseApp/TimelapseApp.csproj",
+  "projectFilePath": "/home/snowflakecat/Documents/Programs/TimelapseApp/TimelapseApp.csproj",
   "expectedPackageFiles": [
     "/home/snowflakecat/.nuget/packages/atksharp/3.24.24.95/atksharp.3.24.24.95.nupkg.sha512",
     "/home/snowflakecat/.nuget/packages/cairosharp/3.24.24.95/cairosharp.3.24.24.95.nupkg.sha512",

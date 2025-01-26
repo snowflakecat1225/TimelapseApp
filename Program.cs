@@ -5,6 +5,7 @@ namespace TimelapseApp
 {
     class Program
     {
+        [Obsolete]
         public static void Main(string[] args)
         {
             if (args.Length == 3 && args.ContainsOnlyNumbers())
