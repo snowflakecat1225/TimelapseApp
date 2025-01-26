@@ -12,7 +12,6 @@ namespace TimelapseApp
         private static Entry _rtspEntry;
         private static Entry _saveEntry;
 
-        [Obsolete]
         public static void Init()
         {
             Application.Init();
@@ -23,18 +22,16 @@ namespace TimelapseApp
             Application.Run();
         }
 
-        [Obsolete]
         private static void MainWindowInit()
         {
             _mainWindow = new("Timelapse App");
-            _mainWindow.Destroyed += delegate { Application.Quit(); };
+            _mainWindow.Destroyed += (sender, e) => Application.Quit();
             
             Box box = new(Orientation.Vertical, 15)
             {
                 Margin = 45,
                 MarginTop = 20,
-                MarginBottom = 15,
-                WidthRequest = 320
+                MarginBottom = 15
             };
             _mainWindow.Add(box);
             
@@ -81,11 +78,14 @@ namespace TimelapseApp
             saveEntryBox.Add(openFolderViewButton);
             box.Add(saveEntryBox);
             
-            HBox commonBox = new(true, 0);
-            HBox box1 = new();
-            HBox box2 = new();
-            HBox box3 = new();
-            Button startButton = new() 
+            Box commonBox = new(Orientation.Horizontal, 0)
+            {
+                Homogeneous = true
+            };
+            Box box1 = new(Orientation.Vertical, 0);
+            Box box2 = new(Orientation.Vertical, 0);
+            Box box3 = new(Orientation.Vertical, 0);
+            Button startButton = new()
             {
                 Label = "Start recording",
                 Halign = Align.Center
