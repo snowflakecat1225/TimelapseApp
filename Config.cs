@@ -5,14 +5,14 @@ namespace TimelapseApp
 {
     public class Config
     {
-        private static readonly string _configPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/TimelapseApp.conf";
+        public static readonly string Path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         
         public static void Create(string sourceLink, string resultPath, bool localTimeChecked)
         {
             try
             {
-                using StreamWriter sw = new(_configPath);
-                sw.WriteLine(sourceLink + "\n" + resultPath + "\n" + localTimeChecked);
+                using StreamWriter sw = new(System.IO.Path.Combine(Path, "TimelapseApp.conf"));
+                sw.WriteLine(sourceLink + "\n" + resultPath + "\n" + localTimeChecked + "\n" + FFmpeg.Path + "\n" + FFplay.Path);
             }
             catch (IOException ex)
             {
@@ -22,11 +22,11 @@ namespace TimelapseApp
 
         private static string GetConfigString(int index)
         {
-            if (File.Exists(_configPath))
+            if (File.Exists(Path + "/TimelapseApp.conf"))
             {
                 try
                 {
-                    using StreamReader sr = new(_configPath);
+                    using StreamReader sr = new(System.IO.Path.Combine(Path, "TimelapseApp.conf"));
                         return sr.ReadToEnd().Split("\n", StringSplitOptions.RemoveEmptyEntries)[index];
                 }
                 catch (IOException ex)
@@ -59,12 +59,15 @@ namespace TimelapseApp
                 _ => false,
             };
         }
+        public static string GetFFmpegPath() => GetConfigString(3);
+        public static string GetFFplayPath() => GetConfigString(4);
+
 
         public static void Delete()
         {
             try
             {
-                File.Delete(_configPath);
+                File.Delete(System.IO.Path.Combine(Path, "TimelapseApp.conf"));
             }
             catch (IOException ex)
             {

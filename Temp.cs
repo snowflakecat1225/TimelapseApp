@@ -5,14 +5,19 @@ namespace TimelapseApp
 {
     public class Temp
     {
-        private static readonly string tempPath = $"/home/{Environment.UserName}/.cache/TimelapseApp";
+        private static string _tempPath;
+        public static string Path
+        {
+            get { return _tempPath; }
+            set { _tempPath = value; }
+        }
 
         public static void Create()
         {
             try
             {
-                if (!Directory.Exists(tempPath))
-                Directory.CreateDirectory(tempPath);
+                if (!Directory.Exists(_tempPath))
+                Directory.CreateDirectory(_tempPath);
             }
             catch (IOException ex)
             {
@@ -24,7 +29,7 @@ namespace TimelapseApp
         {
             try
             {
-                Directory.Delete(tempPath, true);
+                Directory.Delete(_tempPath, true);
             }
             catch (IOException ex)
             {
