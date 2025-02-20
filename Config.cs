@@ -5,8 +5,8 @@ namespace TimelapseApp
 {
     public class Config
     {
-        public static readonly string Path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        
+        public static string Path => Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
         public static void Create(string sourceLink, string resultPath, bool localTimeChecked)
         {
             try
@@ -16,13 +16,13 @@ namespace TimelapseApp
             }
             catch (IOException ex)
             {
-                Console.WriteLine(ex.Message);
+                ex.Message.MwErrorMessage();
             }
         }
 
         private static string GetConfigString(int index)
         {
-            if (File.Exists(Path + "/TimelapseApp.conf"))
+            if (File.Exists(System.IO.Path.Combine(Path, "TimelapseApp.conf")))
             {
                 try
                 {
@@ -31,7 +31,7 @@ namespace TimelapseApp
                 }
                 catch (IOException ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    ex.Message.MwErrorMessage();
                 }
             }
             return string.Empty;
@@ -39,20 +39,20 @@ namespace TimelapseApp
 
         public static string GetSourceLink() => GetConfigString(0);
         public static string GetResultPath() => GetConfigString(1);
-        public static bool GetLocalTimeChecked()
+        public static bool GetTimestampChecked()
         {
-            string localTimeChecked = string.Empty;
+            string timestampChecked = string.Empty;
             
             try
             {
-                localTimeChecked = GetConfigString(2);
+                timestampChecked = GetConfigString(2);
             }
             catch (IOException ex)
             {
                 Console.WriteLine(ex.Message);
             }
 
-            return localTimeChecked.ToLower() switch
+            return timestampChecked.ToLower() switch
             {
                 "false" or "0" => false,
                 "true" or "1" => true,

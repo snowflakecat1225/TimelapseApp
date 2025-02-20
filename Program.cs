@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Gtk;
 
@@ -40,28 +38,14 @@ namespace TimelapseApp
                 FFmpeg.Path = ffmpegSearchResult;
             else
             {
-                MessageDialog messageDialogFfmpeg = new(
-                    GtkInterface.MainWindow,
-                    DialogFlags.Modal,
-                    MessageType.Error,
-                    ButtonsType.Close,
-                    "There is not installed FFmpeg");
-                messageDialogFfmpeg.Run();
-                messageDialogFfmpeg.Destroy();
+                "There is not installed FFmpeg".MwErrorMessage();
             }
 
             if (!string.IsNullOrEmpty(ffplaySearchResult))
                 FFplay.Path = ffplaySearchResult;
             else
             {
-                MessageDialog messageDialogFfplay = new(
-                    GtkInterface.MainWindow,
-                    DialogFlags.Modal,
-                    MessageType.Error,
-                    ButtonsType.Close,
-                    "There is not installed FFplay");
-                messageDialogFfplay.Run();
-                messageDialogFfplay.Destroy();
+                "There is not installed FFplay".MwErrorMessage();
             }
 
             Temp.Path = Path.Combine(Path.GetTempPath(), "TimelapseApp");
@@ -71,7 +55,7 @@ namespace TimelapseApp
                     int.Parse(args[0]),
                     int.Parse(args[1]),
                     int.Parse(args[2]));
-            else GtkInterface.Init();
+            else Interface.Init();
 
             Application.Run();
         }

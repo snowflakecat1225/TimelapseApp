@@ -13,7 +13,7 @@ namespace TimelapseApp
         
         public static void Recording(string sourceLink, string outputPath, int recordingTime)
         {
-            bool localTimeChecked = Config.GetLocalTimeChecked();
+            bool localTimeChecked = Config.GetTimestampChecked();
             string args = 
                 $"-y -rtsp_transport tcp -i {sourceLink} -c:v libx264 -b:v 16k -r 1 -an -tune zerolatency -preset ultrafast -crf 25" +
                 $"{(localTimeChecked ? "-vf drawtext=\"font=Arial:fontsize=70:fontcolor=white:x=0:y=0:text='%{localtime\\:%b %d %Y %H\\\\\\\\\\:%M\\\\\\\\\\:%S}':box=1:boxcolor=black@0.4:boxborderw=5\" " : "")}" +
