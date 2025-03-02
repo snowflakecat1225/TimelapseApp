@@ -5,10 +5,21 @@ using Gtk;
 
 namespace TimelapseApp
 {
-    class Interface
+    public class Interface
     {
         public static Window Main { get; } = new("Timelapse App");
         public static Window Settings { get; private set; }
+
+        private static Entry _rtspEntry;
+        private static Entry _saveEntry;
+        private static Entry _crontabEntry;
+        private static Entry _tempEntry;
+        private static Entry _numberOfDaysEntry;
+
+        private static readonly CheckButton _addTimestampButton = new() { Label = "Add timestamp" };
+
+        private static Button _startButton;
+        private static Button _ffplayButton;
 
         public static void Init()
         {
@@ -17,14 +28,11 @@ namespace TimelapseApp
 
         private static class MainWindow
         {
-            private static Entry _rtspEntry;
-            private static Entry _saveEntry;
-
             public static void Init()
             {
                 Main.Destroyed += static (sender, e) => Application.Quit();
 
-                
+
                 Box box = new(Orientation.Vertical, 15)
                 {
                     Margin = 45,
@@ -32,8 +40,8 @@ namespace TimelapseApp
                     MarginBottom = 15
                 };
                 Main.Add(box);
-                
-                
+
+
                 Box rtspEntryBox = new(Orientation.Vertical, 10);
                 box.Add(rtspEntryBox);
 
@@ -48,15 +56,17 @@ namespace TimelapseApp
                 {
                     Halign = Align.Fill
                 };
+                _rtspEntry.Changed += RtspEntry_Changed;
                 rtspEntryBox.Add(_rtspEntry);
-                
-                Button ffplayButton = new()
+
+                _ffplayButton = new()
                 {
                     Label = "Check stream",
-                    Halign = Align.End
+                    Halign = Align.End,
+                    Sensitive = false,
                 };
-                ffplayButton.Clicked += FfplayButton_Clicked;
-                rtspEntryBox.Add(ffplayButton);
+                _ffplayButton.Clicked += FfplayButton_Clicked;
+                rtspEntryBox.Add(_ffplayButton);
 
 
                 Box saveEntryBox = new(Orientation.Vertical, 10);
@@ -74,6 +84,7 @@ namespace TimelapseApp
                     Text = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos),
                     Halign = Align.Fill
                 };
+                _saveEntry.Changed += SaveEntry_Changed;
                 saveEntryBox.Add(_saveEntry);
 
                 Button openFolderViewButton = new()
@@ -107,27 +118,21 @@ namespace TimelapseApp
                 numberOfDaysBox.Add(childNodb1);
                 numberOfDaysBox.Add(childNodb2);
                 numberOfDaysBox.Add(childNodb3);
-                
+
                 Label numberOfDaysLabel = new()
                 {
                     Text = "Number of days"
                 };
                 childNodb1.Add(numberOfDaysLabel);
 
-                Entry numberOfDaysEntry = new()
+                _numberOfDaysEntry = new()
                 {
                     InputPurpose = InputPurpose.Digits,
                     PlaceholderText = "180",
                     Halign = Align.Center
                 };
-                childNodb2.Add(numberOfDaysEntry);
+                childNodb2.Add(_numberOfDaysEntry);
 
-                CheckButton addTimestampLabel = new()
-                {
-                    Label = "Add timestamp"
-                };
-                childNodb3.Add(addTimestampLabel);
-                
 
                 Box startRecordingBox = new(Orientation.Vertical, 10)
                 {
@@ -135,8 +140,7 @@ namespace TimelapseApp
                 };
                 box.PackEnd(startRecordingBox, false, false, 10);
 
-                Separator separator1 = new(Orientation.Horizontal);
-                startRecordingBox.Add(separator1);
+                startRecordingBox.Add(new Separator(Orientation.Horizontal));
 
                 Box commonStartButtonBox = new(Orientation.Horizontal, 0)
                 {
@@ -151,14 +155,15 @@ namespace TimelapseApp
                 commonStartButtonBox.Add(childCsbb2);
                 commonStartButtonBox.Add(childCsbb3);
 
-                Button startButton = new()
+                _startButton = new()
                 {
                     Label = "Start recording",
-                    Halign = Align.Center
+                    Halign = Align.Center,
+                    Sensitive = false,
                 };
-                startButton.Clicked += StartButton_Clicked;
-                childCsbb2.Add(startButton);
-                
+                _startButton.Clicked += StartButton_Clicked;
+                childCsbb2.Add(_startButton);
+
                 Button openSettingsButton = new()
                 {
                     Halign = Align.End,
@@ -167,11 +172,27 @@ namespace TimelapseApp
                 openSettingsButton.Clicked += OpenSettingsButton_Clicked;
                 childCsbb3.Add(openSettingsButton);
 
-                Separator separator2 = new(Orientation.Horizontal);
-                startRecordingBox.Add(separator2);
+                startRecordingBox.Add(new Separator(Orientation.Horizontal));
 
 
                 Main.ShowAll();
+            }
+
+            private static void SaveEntry_Changed(object sender, EventArgs e)
+            {
+                if (FFmpeg.Exists && FFplay.Exists && Crontab.FileExists &&
+                    !string.IsNullOrEmpty(_rtspEntry.Text) && !string.IsNullOrEmpty(_saveEntry.Text))
+                        _startButton.Sensitive = true;
+                else _startButton.Sensitive = false;
+            }
+
+            private static void RtspEntry_Changed(object sender, EventArgs e)
+            {
+                if (FFplay.Exists && !string.IsNullOrEmpty(_rtspEntry.Text))
+                    _ffplayButton.Sensitive = true;
+                else _ffplayButton.Sensitive = false;
+
+                SaveEntry_Changed(sender, e);
             }
 
             private static void FfplayButton_Clicked(object sender, EventArgs e)
@@ -183,9 +204,9 @@ namespace TimelapseApp
                         if (IsRtspLinkValid(_rtspEntry.Text))
                             FFplay.Play(_rtspEntry.Text);
                     }
-                    else "This is not RTSP-link".MwErrorMessage();
+                    else "This is not RTSP-link".Message(Main);
                 }
-                else "Empty input field".MwErrorMessage();
+                else "Empty input field".Message(Main);
             }
 
             private static void OpenFolderViewButton_Clicked(object sender, EventArgs e)
@@ -199,7 +220,7 @@ namespace TimelapseApp
                 {
                     SelectMultiple = false
                 };
-                fileChooser.SetCurrentFolder(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos));
+                _ = fileChooser.SetCurrentFolder(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos));
 
                 fileChooser.SetPosition(WindowPosition.CenterOnParent);
 
@@ -224,14 +245,16 @@ namespace TimelapseApp
                 }
                 catch (Exception ex)
                 {
-                    ex.Message.MwErrorMessage();
+                    ex.Message.Message(Main);
                     return false;
                 }
             }
 
             private static void StartButton_Clicked(object sender, EventArgs e)
             {
-                
+                int days = !string.IsNullOrEmpty(_numberOfDaysEntry.Text) ? int.Parse(_numberOfDaysEntry.Text) : 180;
+                TimelapseScript.Create(_rtspEntry.Text, _saveEntry.Text, _addTimestampButton.Active);
+                $"Done! This timelapse will be creating during {days} days".Message(Main);
             }
 
             private static void OpenSettingsButton_Clicked(object sender, EventArgs e)
@@ -243,13 +266,14 @@ namespace TimelapseApp
 
         private static class SettingsWindow
         {
-            private static Entry _ffmpegEntry;
-            private static Entry _ffplayEntry;
-            private static Entry _tempEntry;
-
             public static void Init()
             {
-                Settings = new("Settings") { Resizable = false };
+                Settings = new("Settings")
+                { 
+                    Resizable = false, 
+                    Modal = true, 
+                    TransientFor = Main 
+                };
                 Settings.DeleteEvent += SettingsWindow_DeleteEvent;
 
 
@@ -261,38 +285,29 @@ namespace TimelapseApp
                 Settings.Add(box);
 
 
-                Box ffmpegBox = new(Orientation.Vertical, 10);
-                box.Add(ffmpegBox);
-
-                Label ffmpegLabel = new()
-                {
-                    Text = "Path to FFmpeg"
-                };
-                ffmpegBox.Add(ffmpegLabel);
-
-                _ffmpegEntry = new()
+                Box addTimestampBox = new(Orientation.Horizontal, 0)
                 {
                     Halign = Align.Center,
-                    Text = FFmpeg.Path
                 };
-                ffmpegBox.Add(_ffmpegEntry);
+                box.Add(addTimestampBox);
+                addTimestampBox.Add(_addTimestampButton);
 
 
-                Box ffplayBox = new(Orientation.Vertical, 10);
-                box.Add(ffplayBox);
+                Box crontabBox = new(Orientation.Vertical, 10);
+                box.Add(crontabBox);
 
-                Label ffplayLabel = new()
+                Label crontabLabel = new()
                 {
-                    Text = "Path to FFplay"
+                    Text = "Path to Cron file"
                 };
-                ffplayBox.Add(ffplayLabel);
+                crontabBox.Add(crontabLabel);
 
-                _ffplayEntry = new()
+                _crontabEntry = new()
                 {
                     Halign = Align.Center,
-                    Text = FFplay.Path
+                    Text = Crontab.Path,
                 };
-                ffplayBox.Add(_ffplayEntry);
+                crontabBox.Add(_crontabEntry);
 
 
                 Box configBox = new(Orientation.Vertical, 10);
@@ -332,22 +347,10 @@ namespace TimelapseApp
 
             private static void SettingsWindow_DeleteEvent(object sender, DeleteEventArgs e)
             {
-                if (!_ffmpegEntry.Text.Contains("ffmpeg") || !File.Exists(_ffmpegEntry.Text))
-                {
-                    "This path doesn't belong to FFmpeg".SwErrorMessage();
-                    e.RetVal = true;
-                }
-                
-                if (!_ffplayEntry.Text.Contains("ffplay") || !File.Exists(_ffplayEntry.Text))
-                {
-                    "This path doesn't belong to FFplay".SwErrorMessage();
-                    e.RetVal = true;
-                }
-
                 if (_tempEntry.Text != Path.Combine(Path.GetTempPath(), "TimelapseApp") && !Directory.Exists(_tempEntry.Text))
                 {
-                    "Temporary directory doesn't exist".SwErrorMessage();
-                    e.RetVal= true;
+                    "Temporary directory doesn't exist".Message(Settings);
+                    e.RetVal = true;
                 }
             }
         }

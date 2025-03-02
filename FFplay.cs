@@ -1,28 +1,30 @@
+using System;
 using System.Diagnostics;
 
 namespace TimelapseApp
 {
     public class FFplay
     {
-        private static string _ffplayPath;
-        public static string Path
-        {
-            get { return _ffplayPath; }
-            set { _ffplayPath = value; }
-        }
+        public static bool Exists { get; set; }
 
         public static async void Play(string link)
         {
-            string args = "-rtsp_transport tcp -b:v 16k -an -tune zerolatency -preset ultrafast -crf 25 " + link;
-            ProcessStartInfo startInfo = new()
+            string args = "-rtsp_transport tcp -hide_banner -b:v 16k -an -tune zerolatency -preset ultrafast -crf 25 " + link;
+            
+            ProcessStartInfo startInfo = new("ffplay")
             {
-                FileName = _ffplayPath,
-                Arguments = args
+                Arguments = args,
+                RedirectStandardError = true
             };
 
-            var ffplay = Process.Start(startInfo)!;
-                        
+            using var ffplay = Process.Start(startInfo);
             await ffplay.WaitForExitAsync();
+
+            var errorMessage = ffplay.StandardError.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries)[^1];
+            
+            //if (errorMessage.Length < 200)
+            if (!errorMessage.Contains("KB aq=") && !errorMessage.Contains("KB vq=") && !errorMessage.Contains("KB sq="))
+                errorMessage.Message(Interface.Main);
         }
     }
 }

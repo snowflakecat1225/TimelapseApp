@@ -7,16 +7,20 @@ namespace TimelapseApp
     {
         public static string Path => Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 
-        public static void Create(string sourceLink, string resultPath, bool localTimeChecked)
+        public static void Create(string sourceLink, string resultPath, bool timestampChecked)
         {
             try
             {
                 using StreamWriter sw = new(System.IO.Path.Combine(Path, "TimelapseApp.conf"));
-                sw.WriteLine(sourceLink + "\n" + resultPath + "\n" + localTimeChecked + "\n" + FFmpeg.Path + "\n" + FFplay.Path);
+                sw.WriteLine(
+                    sourceLink + "\n" + 
+                    resultPath + "\n" + 
+                    timestampChecked + "\n"
+                );
             }
             catch (IOException ex)
             {
-                ex.Message.MwErrorMessage();
+                ex.Message.Message(Interface.Main);
             }
         }
 
@@ -31,7 +35,7 @@ namespace TimelapseApp
                 }
                 catch (IOException ex)
                 {
-                    ex.Message.MwErrorMessage();
+                    ex.Message.Message(Interface.Main);
                 }
             }
             return string.Empty;
@@ -49,7 +53,7 @@ namespace TimelapseApp
             }
             catch (IOException ex)
             {
-                Console.WriteLine(ex.Message);
+                ex.Message.Message(Interface.Main);
             }
 
             return timestampChecked.ToLower() switch
@@ -59,9 +63,6 @@ namespace TimelapseApp
                 _ => false,
             };
         }
-        public static string GetFFmpegPath() => GetConfigString(3);
-        public static string GetFFplayPath() => GetConfigString(4);
-
 
         public static void Delete()
         {
@@ -71,7 +72,7 @@ namespace TimelapseApp
             }
             catch (IOException ex)
             {
-                Console.WriteLine(ex.Message);
+                ex.Message.Message(Interface.Main);
             }
         } 
     }

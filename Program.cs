@@ -1,5 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
+using System.Linq;
 using Gtk;
 
 namespace TimelapseApp
@@ -8,56 +10,61 @@ namespace TimelapseApp
     {
         public static void Main(string[] args)
         {
-            Application.Init();
+            List<string> errorMessages = new();
 
-            string directory = "/", ffmpegSearchResult = string.Empty, ffplaySearchResult = string.Empty;
+            string directory = "/bin";
 
-            Parallel.Invoke(
-                () =>
-                {
-                    try
-                    {
-                        foreach (var file in Directory.EnumerateFiles(directory, "ffmpeg", SearchOption.AllDirectories))
-                            ffmpegSearchResult = file;
-                    }
-                    catch { /*To be honest I don't care :P*/ }
-                },
+            List<string> ffmpegSearch = Directory.EnumerateFiles(directory, "ffmpeg", SearchOption.AllDirectories).ToList();
+            List<string> ffplaySearch = Directory.EnumerateFiles(directory, "ffplay", SearchOption.AllDirectories).ToList();
 
-                () =>
-                {
-                    try
-                    {
-                        foreach (var file in Directory.EnumerateFiles(directory, "ffplay", SearchOption.AllDirectories))
-                            ffplaySearchResult = file;
-                    }
-                    catch { /*To be honest I don't care :P*/ }
-                }
-            );
-
-            if (!string.IsNullOrEmpty(ffmpegSearchResult))
-                FFmpeg.Path = ffmpegSearchResult;
+            if (ffmpegSearch.Count > 0 && !string.IsNullOrEmpty(ffmpegSearch.First()))
+                FFmpeg.Exists = true;
             else
             {
-                "There is not installed FFmpeg".MwErrorMessage();
+                FFmpeg.Exists = false;
+                errorMessages.Add("There is not installed FFmpeg");
             }
 
-            if (!string.IsNullOrEmpty(ffplaySearchResult))
-                FFplay.Path = ffplaySearchResult;
+            if (ffplaySearch.Count > 0 && !string.IsNullOrEmpty(ffplaySearch.First()))
+                FFplay.Exists = true;
             else
             {
-                "There is not installed FFplay".MwErrorMessage();
+                FFplay.Exists = false;
+                errorMessages.Add("There is not installed FFplay");
             }
 
-            Temp.Path = Path.Combine(Path.GetTempPath(), "TimelapseApp");
+            directory = "/var/spool/cron";
 
-            if (args.Length == 3 && args.ContainsOnlyNumbers())
-                TimelapseScript.Run(
-                    int.Parse(args[0]),
-                    int.Parse(args[1]),
-                    int.Parse(args[2]));
-            else Interface.Init();
+            var crontabPath = Path.Combine(directory, Environment.UserName);
+            if (Directory.Exists(directory) && File.Exists(crontabPath))
+                Crontab.Path = crontabPath;
+            else errorMessages.Add("There is not installed Crontab");
 
-            Application.Run();
+            Temp.Path = Temp.GetDefaultPath();
+
+            if (args.Length == 2 && args.ContainsOnlyNumbers())
+            {
+                if (errorMessages.Count == 0)
+                    TimelapseScript.Run(
+                        int.Parse(args[0]),
+                        int.Parse(args[1]));
+                else
+                    foreach (var error in errorMessages)
+                        Console.WriteLine(error);
+            }
+            else
+            {
+                Application.Init();
+
+                foreach (var error in errorMessages)
+                    error.Message(Interface.Main);
+                
+                Interface.Init();
+
+                Application.Run();
+            }
+
+            //File.Create("/home/snowflakecat/1225.text");
         }
     }
 }

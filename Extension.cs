@@ -4,7 +4,7 @@ namespace TimelapseApp
 {
     public static class Extension
     {
-        public static bool IsNumber(this string s)
+        private static bool IsNumber(this string s)
         {
             foreach (var c in s)
                 if (!char.IsDigit(c))
@@ -20,32 +20,16 @@ namespace TimelapseApp
             return true;
         }
 
-        public static MessageDialog MwErrorMessage(this string message)
+        public static void Message(this string message, Window window)
         {
             MessageDialog messageDialog = new(
-                Interface.Main,
+                window,
                 DialogFlags.Modal,
                 MessageType.Error,
                 ButtonsType.Close,
                 message);
             messageDialog.Run();
             messageDialog.Destroy();
-
-            return messageDialog;
-        }
-
-        public static MessageDialog SwErrorMessage(this string message)
-        {
-            MessageDialog messageDialog = new(
-                Interface.Settings,
-                DialogFlags.Modal,
-                MessageType.Error,
-                ButtonsType.Close,
-                message);
-            messageDialog.Run();
-            messageDialog.Destroy();
-
-            return messageDialog;
         }
     }
 }
