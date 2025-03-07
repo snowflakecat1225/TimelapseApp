@@ -1,14 +1,18 @@
+using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace TimelapseApp
 {
     public class Temp
     {
-        public static string Path { get; set; }
-
-        public static string GetDefaultPath()
+        public static string Path
         {
-            return System.IO.Path.Combine(System.IO.Path.GetTempPath(), "TimelapseApp");
+            get
+            {
+                string tempPath = Config.GetTempPath();
+                return !string.IsNullOrEmpty(tempPath) ? tempPath : System.IO.Path.Combine(System.IO.Path.GetTempPath(), Process.GetCurrentProcess().ProcessName);
+            }
         }
 
         public static void Create()
@@ -16,11 +20,11 @@ namespace TimelapseApp
             try
             {
                 if (!Directory.Exists(Path))
-                Directory.CreateDirectory(Path);
+                    Directory.CreateDirectory(Path);
             }
-            catch (IOException ex)
+            catch (Exception ex)
             {
-                ex.Message.Message(Interface.Main);
+                ("[Temp.Create()]: " + ex.Message).Message(1);
             }
         }
 
@@ -30,10 +34,10 @@ namespace TimelapseApp
             {
                 Directory.Delete(Path, true);
             }
-            catch (IOException ex)
+            catch (Exception ex)
             {
-                ex.Message.Message(Interface.Main);
+                ("[Temp.Delete()]: " + ex.Message).Message(1);
             }
-        } 
+        }
     }
 }

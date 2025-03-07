@@ -1,8 +1,3 @@
-/home/snowflakecat/Documents/Programs/TimelapseApp/obj/Debug/net6.0/TimelapseApp.csproj.AssemblyReference.cache
-/home/snowflakecat/Documents/Programs/TimelapseApp/obj/Debug/net6.0/TimelapseApp.GeneratedMSBuildEditorConfig.editorconfig
-/home/snowflakecat/Documents/Programs/TimelapseApp/obj/Debug/net6.0/TimelapseApp.AssemblyInfoInputs.cache
-/home/snowflakecat/Documents/Programs/TimelapseApp/obj/Debug/net6.0/TimelapseApp.AssemblyInfo.cs
-/home/snowflakecat/Documents/Programs/TimelapseApp/obj/Debug/net6.0/TimelapseApp.csproj.CoreCompileInputs.cache
 /home/snowflakecat/Documents/Programs/TimelapseApp/bin/Debug/net6.0/TimelapseApp
 /home/snowflakecat/Documents/Programs/TimelapseApp/bin/Debug/net6.0/TimelapseApp.deps.json
 /home/snowflakecat/Documents/Programs/TimelapseApp/bin/Debug/net6.0/TimelapseApp.runtimeconfig.json
@@ -16,6 +11,11 @@
 /home/snowflakecat/Documents/Programs/TimelapseApp/bin/Debug/net6.0/GLibSharp.dll
 /home/snowflakecat/Documents/Programs/TimelapseApp/bin/Debug/net6.0/GtkSharp.dll
 /home/snowflakecat/Documents/Programs/TimelapseApp/bin/Debug/net6.0/PangoSharp.dll
+/home/snowflakecat/Documents/Programs/TimelapseApp/obj/Debug/net6.0/TimelapseApp.csproj.AssemblyReference.cache
+/home/snowflakecat/Documents/Programs/TimelapseApp/obj/Debug/net6.0/TimelapseApp.GeneratedMSBuildEditorConfig.editorconfig
+/home/snowflakecat/Documents/Programs/TimelapseApp/obj/Debug/net6.0/TimelapseApp.AssemblyInfoInputs.cache
+/home/snowflakecat/Documents/Programs/TimelapseApp/obj/Debug/net6.0/TimelapseApp.AssemblyInfo.cs
+/home/snowflakecat/Documents/Programs/TimelapseApp/obj/Debug/net6.0/TimelapseApp.csproj.CoreCompileInputs.cache
 /home/snowflakecat/Documents/Programs/TimelapseApp/obj/Debug/net6.0/TimelapseApp.csproj.CopyComplete
 /home/snowflakecat/Documents/Programs/TimelapseApp/obj/Debug/net6.0/TimelapseApp.dll
 /home/snowflakecat/Documents/Programs/TimelapseApp/obj/Debug/net6.0/ref/TimelapseApp.dll

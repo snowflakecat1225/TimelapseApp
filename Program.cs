@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
 using Gtk;
 
 namespace TimelapseApp
@@ -11,6 +12,15 @@ namespace TimelapseApp
         public static void Main(string[] args)
         {
             List<string> errorMessages = new();
+
+            try
+            {
+                if (!NetworkInterface.GetIsNetworkAvailable()) errorMessages.Add("There is no Internet connection");
+            }
+            catch (Exception ex)
+            {
+                errorMessages.Add($"[NetworkInterface.GetIsNetworkAvailable()]: {ex.Message}");
+            }
 
             string directory = "/bin";
 
@@ -35,36 +45,31 @@ namespace TimelapseApp
 
             directory = "/var/spool/cron";
 
-            var crontabPath = Path.Combine(directory, Environment.UserName);
+            string crontabPath = Path.Combine(directory, Environment.UserName);
             if (Directory.Exists(directory) && File.Exists(crontabPath))
                 Crontab.Path = crontabPath;
             else errorMessages.Add("There is not installed Crontab");
 
-            Temp.Path = Temp.GetDefaultPath();
-
-            if (args.Length == 2 && args.ContainsOnlyNumbers())
+            if (args.Length == 3 && args.ContainsOnlyNumbers())
             {
                 if (errorMessages.Count == 0)
-                    TimelapseScript.Run(
+                    Script.Run(
                         int.Parse(args[0]),
-                        int.Parse(args[1]));
+                        int.Parse(args[1]),
+                        int.Parse(args[2]));
                 else
-                    foreach (var error in errorMessages)
-                        Console.WriteLine(error);
+                    foreach (string error in errorMessages)
+                        error.Message();
             }
             else
             {
                 Application.Init();
-
-                foreach (var error in errorMessages)
-                    error.Message(Interface.Main);
-                
+                Interface.IsInitialised = true;
+                foreach (string error in errorMessages)
+                    error.Message(1);
                 Interface.Init();
-
                 Application.Run();
             }
-
-            //File.Create("/home/snowflakecat/1225.text");
         }
     }
 }

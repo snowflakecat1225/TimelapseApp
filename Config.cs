@@ -1,41 +1,55 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace TimelapseApp
 {
     public class Config
     {
-        public static string Path => Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        public static readonly string Path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        private static readonly string _configPath = System.IO.Path.Combine(Path, $"{Process.GetCurrentProcess().ProcessName}.conf");
 
-        public static void Create(string sourceLink, string resultPath, bool timestampChecked)
+        public static void Create(string sourceLink, string resultPath, bool timestampChecked, string tempPath = null)
         {
+            if (tempPath == System.IO.Path.Combine(System.IO.Path.GetTempPath(), Process.GetCurrentProcess().ProcessName)) tempPath = null;
+
             try
             {
-                using StreamWriter sw = new(System.IO.Path.Combine(Path, "TimelapseApp.conf"));
-                sw.WriteLine(
-                    sourceLink + "\n" + 
-                    resultPath + "\n" + 
-                    timestampChecked + "\n"
+                using StreamWriter sw = new(_configPath);
+                sw.Write(
+                    sourceLink + "\n" +
+                    resultPath + "\n" +
+                    timestampChecked + "\n" +
+                    tempPath
                 );
             }
-            catch (IOException ex)
+            catch (Exception ex)
             {
-                ex.Message.Message(Interface.Main);
+                ("[Config.Create()]: " + ex.Message).Message(1);
             }
         }
 
         private static string GetConfigString(int index)
         {
-            if (File.Exists(System.IO.Path.Combine(Path, "TimelapseApp.conf")))
+            if (File.Exists(_configPath))
             {
                 try
                 {
-                    using StreamReader sr = new(System.IO.Path.Combine(Path, "TimelapseApp.conf"));
-                        return sr.ReadToEnd().Split("\n", StringSplitOptions.RemoveEmptyEntries)[index];
+                    using StreamReader sr = new(_configPath);
+                    string[] configs = sr.ReadToEnd().Split("\n");
+                    return configs.Length == 4 ? configs[index] : string.Empty;
                 }
-                catch (IOException ex)
+                catch (Exception ex)
                 {
-                    ex.Message.Message(Interface.Main);
+                    string method = index switch
+                    {
+                        0 => "GetSourceLink()",
+                        1 => "GetResultPath()",
+                        2 => "GetTimestampChecked()",
+                        3 => "GetTempPath()",
+                        _ => string.Empty,
+                    };
+                    ($"[Config.{method}]: " + ex.Message).Message(1);
                 }
             }
             return string.Empty;
@@ -45,35 +59,24 @@ namespace TimelapseApp
         public static string GetResultPath() => GetConfigString(1);
         public static bool GetTimestampChecked()
         {
-            string timestampChecked = string.Empty;
-            
-            try
+            return GetConfigString(2).ToLower() switch
             {
-                timestampChecked = GetConfigString(2);
-            }
-            catch (IOException ex)
-            {
-                ex.Message.Message(Interface.Main);
-            }
-
-            return timestampChecked.ToLower() switch
-            {
-                "false" or "0" => false,
                 "true" or "1" => true,
                 _ => false,
             };
         }
+        public static string GetTempPath() => GetConfigString(3);
 
         public static void Delete()
         {
             try
             {
-                File.Delete(System.IO.Path.Combine(Path, "TimelapseApp.conf"));
+                File.Delete(_configPath);
             }
-            catch (IOException ex)
+            catch (Exception ex)
             {
-                ex.Message.Message(Interface.Main);
+                ("[Config.Delete()]: " + ex.Message).Message(1);
             }
-        } 
+        }
     }
 }

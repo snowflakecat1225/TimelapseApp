@@ -40,7 +40,7 @@
           "dependencies": {
             "GtkSharp": {
               "target": "Package",
-              "version": "[3.24.24.*, )"
+              "version": "[3.24.24.95, )"
             }
           },
           "imports": [
@@ -57,6 +57,10 @@
             {
               "name": "Microsoft.AspNetCore.App.Ref",
               "version": "[6.0.36, 6.0.36]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.linux-x64",
+              "version": "[6.0.36, 6.0.36]"
             }
           ],
           "frameworkReferences": {
@@ -65,6 +69,11 @@
             }
           },
           "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/6.0.136/RuntimeIdentifierGraph.json"
+        }
+      },
+      "runtimes": {
+        "linux-x64": {
+          "#import": []
         }
       }
     }

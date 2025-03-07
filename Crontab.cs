@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 
 namespace TimelapseApp
@@ -19,39 +20,48 @@ namespace TimelapseApp
                 { RedirectStandardOutput = true }))
             {
                 process.WaitForExit();
-                _ = crons.Concat(process.StandardOutput.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries));
+                crons = crons.Concat(process.StandardOutput.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries)).ToList();
             }
 
             return crons;
         }
 
-        private static string Get(string cron)
+        public static string Get(string cron)
         {
-            var crons = GetAll();
+            if (!string.IsNullOrEmpty(cron))
+            {
+                var crons = GetAll();
 
-            foreach (var cronie in crons)
-                if (cronie.Contains(cron))
-                    return cronie;
+                foreach (var cronie in crons)
+                {
+                    if (cronie.Contains(cron))
+                        return cronie;
+                }
+            }
 
             return string.Empty;
         }
 
         public static void Add(string cron)
         {
-            if (string.IsNullOrEmpty(Get(cron)))
+            if (string.IsNullOrEmpty(Get(Environment.ProcessPath)))
             {
-                string command = $"echo '{cron}' >> {Path}";
-
                 try
                 {
-                    Process.Start(new ProcessStartInfo("bash", $"-c \"{command}\"")).WaitForExit();
+                    using StreamWriter sw = new(Path, true);
+                    sw.WriteLine(cron);
                 }
-                catch
+                catch (UnauthorizedAccessException)
                 {
-                    Process.Start(new ProcessStartInfo("pkexec", $"bash -c \"{command}\"")).WaitForExit();
+                    Process.Start(new ProcessStartInfo("pkexec", $"bash -c \"chown {Environment.UserName} {Path}\"")).WaitForExit();
+                    Add(cron);
+                }
+                catch (Exception ex)
+                {
+                    ("[Crontab.Add()]: " + ex.Message).Message(1);
                 }
             }
-            else "Crontab note already exists".Message(Interface.Main);
+            else Change(Get(Environment.ProcessPath), cron);
         }
 
         public static void Remove(string cron)
@@ -66,18 +76,52 @@ namespace TimelapseApp
                 foreach (var cronie in crons)
                     if (cronie != cron)
                         allCrons += cronie + '\n';
-                
-                var command = $"echo '{allCrons}' > {Path}";
 
                 try
                 {
-                    Process.Start(new ProcessStartInfo("bash", $"-c \"{command}\"")).WaitForExit();
+                    using StreamWriter sw = new(Path);
+                    sw.WriteLine(allCrons);
                 }
-                catch
+                catch (UnauthorizedAccessException)
                 {
-                    Process.Start(new ProcessStartInfo("pkexec", $"bash -c \"{command}\"")).WaitForExit();
+                    Process.Start(new ProcessStartInfo("pkexec", $"bash -c \"chown {Environment.UserName} {Path}\"")).WaitForExit();
+                    Remove(cron);
+                }
+                catch (Exception ex)
+                {
+                    ("[Crontab.Remove()]: " + ex.Message).Message(1);
                 }
             }
+        }
+
+        public static void Change(string oldCron, string newCron)
+        {
+            var crons = GetAll();
+            oldCron = Get(oldCron);
+
+            if (!string.IsNullOrEmpty(oldCron))
+            {
+                string allCrons = string.Empty;
+
+                foreach (var cron in crons)
+                    allCrons += cron != oldCron ? cron + '\n' : newCron + '\n';
+
+                try
+                {
+                    using StreamWriter sw = new(Path);
+                    sw.WriteLine(allCrons);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    Process.Start(new ProcessStartInfo("pkexec", $"bash -c \"chown {Environment.UserName} {Path}\"")).WaitForExit();
+                    Change(oldCron, newCron);
+                }
+                catch (Exception ex)
+                {
+                    ("[Crontab.Change()]: " + ex.Message).Message(1);
+                }
+            }
+            else Add(newCron);
         }
     }
 }

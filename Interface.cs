@@ -5,32 +5,37 @@ using Gtk;
 
 namespace TimelapseApp
 {
-    public class Interface
+    public static class Interface
     {
-        public static Window Main { get; } = new("Timelapse App");
-        public static Window Settings { get; private set; }
+        public static bool IsInitialised { get; set; } = false;
 
-        private static Entry _rtspEntry;
-        private static Entry _saveEntry;
-        private static Entry _crontabEntry;
-        private static Entry _tempEntry;
-        private static Entry _numberOfDaysEntry;
+        private static string _tempPath = Temp.Path;
 
-        private static readonly CheckButton _addTimestampButton = new() { Label = "Add timestamp" };
+        private static bool _timestampChecked = false;
 
-        private static Button _startButton;
-        private static Button _ffplayButton;
+        public class Windows
+        {
+            public static readonly Window Main = new("Timelapse App");
+            public static Window Settings { get; set; }
+        }
 
         public static void Init()
         {
-            MainWindow.Init();
+            new MainWindow().ShowAll();
         }
 
-        private static class MainWindow
+        private class MainWindow
         {
-            public static void Init()
+            private static Button _startButton;
+            private static Button _ffplayButton;
+
+            private static Entry _rtspEntry;
+            private static Entry _saveEntry;
+            private static Entry _numberOfDaysEntry;
+
+            public MainWindow()
             {
-                Main.Destroyed += static (sender, e) => Application.Quit();
+                Windows.Main.Destroyed += delegate { Application.Quit(); };
 
 
                 Box box = new(Orientation.Vertical, 15)
@@ -39,7 +44,7 @@ namespace TimelapseApp
                     MarginTop = 30,
                     MarginBottom = 15
                 };
-                Main.Add(box);
+                Windows.Main.Add(box);
 
 
                 Box rtspEntryBox = new(Orientation.Vertical, 10);
@@ -173,16 +178,18 @@ namespace TimelapseApp
                 childCsbb3.Add(openSettingsButton);
 
                 startRecordingBox.Add(new Separator(Orientation.Horizontal));
+            }
 
-
-                Main.ShowAll();
+            public void ShowAll()
+            {
+                Windows.Main.ShowAll();
             }
 
             private static void SaveEntry_Changed(object sender, EventArgs e)
             {
                 if (FFmpeg.Exists && FFplay.Exists && Crontab.FileExists &&
                     !string.IsNullOrEmpty(_rtspEntry.Text) && !string.IsNullOrEmpty(_saveEntry.Text))
-                        _startButton.Sensitive = true;
+                    _startButton.Sensitive = true;
                 else _startButton.Sensitive = false;
             }
 
@@ -204,16 +211,16 @@ namespace TimelapseApp
                         if (IsRtspLinkValid(_rtspEntry.Text))
                             FFplay.Play(_rtspEntry.Text);
                     }
-                    else "This is not RTSP-link".Message(Main);
+                    else "This is not RTSP-link".Message(1);
                 }
-                else "Empty input field".Message(Main);
+                else "Empty input field".Message(1);
             }
 
             private static void OpenFolderViewButton_Clicked(object sender, EventArgs e)
             {
                 FileChooserDialog fileChooser = new(
                     "Select the path to save the file",
-                    Main,
+                    Windows.Main,
                     FileChooserAction.SelectFolder,
                     "Cancel", ResponseType.Cancel,
                     "Open", ResponseType.Accept)
@@ -234,18 +241,18 @@ namespace TimelapseApp
             {
                 try
                 {
-                    var uri = new Uri(link);
-                    var host = uri.Host;
-                    var port = uri.Port == -1 ? 554 : uri.Port;
+                    Uri uri = new(link);
+                    string host = uri.Host;
+                    int port = uri.Port == -1 ? 554 : uri.Port;
 
-                    using var client = new TcpClient();
+                    using TcpClient client = new();
                     client.Connect(host, port);
 
                     return true;
                 }
                 catch (Exception ex)
                 {
-                    ex.Message.Message(Main);
+                    ex.Message.Message(1);
                     return false;
                 }
             }
@@ -253,28 +260,30 @@ namespace TimelapseApp
             private static void StartButton_Clicked(object sender, EventArgs e)
             {
                 int days = !string.IsNullOrEmpty(_numberOfDaysEntry.Text) ? int.Parse(_numberOfDaysEntry.Text) : 180;
-                TimelapseScript.Create(_rtspEntry.Text, _saveEntry.Text, _addTimestampButton.Active);
-                $"Done! This timelapse will be creating during {days} days".Message(Main);
+                Script.Create(_rtspEntry.Text, _saveEntry.Text, _timestampChecked, days, _tempPath);
+                $"Done! This timelapse will be created over {days} days".Message(1);
             }
 
             private static void OpenSettingsButton_Clicked(object sender, EventArgs e)
             {
-                SettingsWindow.Init();
-                Settings.ShowAll();
+                new SettingsWindow(Windows.Main).ShowAll();
             }
         }
 
-        private static class SettingsWindow
+        private class SettingsWindow
         {
-            public static void Init()
+            private static Entry _tempEntry;
+            private static Entry _crontabEntry;
+
+            public SettingsWindow(Window window)
             {
-                Settings = new("Settings")
-                { 
-                    Resizable = false, 
-                    Modal = true, 
-                    TransientFor = Main 
+                Windows.Settings = new("Settings")
+                {
+                    Resizable = false,
+                    Modal = true,
+                    TransientFor = window
                 };
-                Settings.DeleteEvent += SettingsWindow_DeleteEvent;
+                Windows.Settings.DeleteEvent += Settings_DeleteEvent;
 
 
                 Box box = new(Orientation.Vertical, 25)
@@ -282,7 +291,7 @@ namespace TimelapseApp
                     Margin = 45,
                     MarginTop = 30
                 };
-                Settings.Add(box);
+                Windows.Settings.Add(box);
 
 
                 Box addTimestampBox = new(Orientation.Horizontal, 0)
@@ -290,7 +299,13 @@ namespace TimelapseApp
                     Halign = Align.Center,
                 };
                 box.Add(addTimestampBox);
-                addTimestampBox.Add(_addTimestampButton);
+                CheckButton addTimestampButton = new()
+                {
+                    Label = "Add timestamp",
+                    Active = _timestampChecked
+                };
+                addTimestampButton.Toggled += delegate { _timestampChecked = addTimestampButton.Active; };
+                addTimestampBox.Add(addTimestampButton);
 
 
                 Box crontabBox = new(Orientation.Vertical, 10);
@@ -306,6 +321,7 @@ namespace TimelapseApp
                 {
                     Halign = Align.Center,
                     Text = Crontab.Path,
+                    IsEditable = false
                 };
                 crontabBox.Add(_crontabEntry);
 
@@ -340,18 +356,53 @@ namespace TimelapseApp
                 _tempEntry = new()
                 {
                     Halign = Align.Center,
-                    Text = Temp.Path
+                    Text = _tempPath
                 };
                 tempBox.Add(_tempEntry);
+
+                Button openFolderViewButton = new()
+                {
+                    Label = "Open",
+                    Halign = Align.End
+                };
+                openFolderViewButton.Clicked += OpenFolderViewButton_Clicked;
+                tempBox.Add(openFolderViewButton);
             }
 
-            private static void SettingsWindow_DeleteEvent(object sender, DeleteEventArgs e)
+            public void ShowAll()
+            {
+                Windows.Settings.ShowAll();
+            }
+
+            private static void OpenFolderViewButton_Clicked(object sender, EventArgs e)
+            {
+                FileChooserDialog fileChooser = new(
+                    "Select the path to save the file",
+                    Windows.Settings,
+                    FileChooserAction.SelectFolder,
+                    "Cancel", ResponseType.Cancel,
+                    "Open", ResponseType.Accept)
+                {
+                    SelectMultiple = false
+                };
+                _ = fileChooser.SetCurrentFolder(Environment.GetFolderPath(Environment.SpecialFolder.Personal));
+
+                fileChooser.SetPosition(WindowPosition.CenterOnParent);
+
+                if (fileChooser.Run() == (int)ResponseType.Accept)
+                    _tempEntry.Text = fileChooser.CurrentFolder;
+
+                fileChooser.Destroy();
+            }
+
+            private void Settings_DeleteEvent(object sender, DeleteEventArgs e)
             {
                 if (_tempEntry.Text != Path.Combine(Path.GetTempPath(), "TimelapseApp") && !Directory.Exists(_tempEntry.Text))
                 {
-                    "Temporary directory doesn't exist".Message(Settings);
+                    "Temporary directory doesn't exist".Message(2);
                     e.RetVal = true;
                 }
+                else _tempPath = _tempEntry.Text;
             }
         }
     }
