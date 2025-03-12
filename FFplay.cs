@@ -1,5 +1,7 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace TimelapseApp
 {
@@ -7,17 +9,11 @@ namespace TimelapseApp
     {
         public static bool Exists { get; set; }
 
-        public static async void Play(string link)
+        public static async Task<Task<Process>> Play(string link)
         {
-            string args = "-rtsp_transport tcp -hide_banner -b:v 16k -an -tune zerolatency -preset ultrafast -crf 25 " + link;
+            string args = "-rtsp_transport tcp -hide_banner -maxrate 500k -an -tune zerolatency -preset ultrafast -crf 25 " + link;
 
-            ProcessStartInfo startInfo = new("ffplay")
-            {
-                Arguments = args,
-                RedirectStandardError = true
-            };
-
-            using Process ffplay = Process.Start(startInfo);
+            using Process ffplay = Process.Start(new ProcessStartInfo("ffplay", args) { RedirectStandardError = true });
             await ffplay.WaitForExitAsync();
 
             string errorMessage = ffplay.StandardError.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries)[^1];
@@ -25,6 +21,8 @@ namespace TimelapseApp
             //if (errorMessage.Length < 200)
             if (!errorMessage.Contains("KB aq=") && !errorMessage.Contains("KB vq=") && !errorMessage.Contains("KB sq="))
                 errorMessage.Message(1);
+
+            return Task.FromResult(ffplay);
         }
     }
 }

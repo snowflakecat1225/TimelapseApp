@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
@@ -26,6 +27,7 @@ namespace TimelapseApp
 
             List<string> ffmpegSearch = Directory.EnumerateFiles(directory, "ffmpeg", SearchOption.AllDirectories).ToList();
             List<string> ffplaySearch = Directory.EnumerateFiles(directory, "ffplay", SearchOption.AllDirectories).ToList();
+            List<string> ffprobeSearch = Directory.EnumerateFiles(directory, "ffprobe", SearchOption.AllDirectories).ToList();
 
             if (ffmpegSearch.Count > 0 && !string.IsNullOrEmpty(ffmpegSearch.First()))
                 FFmpeg.Exists = true;
@@ -43,11 +45,30 @@ namespace TimelapseApp
                 errorMessages.Add("There is not installed FFplay");
             }
 
+            if (ffprobeSearch.Count > 0 && !string.IsNullOrEmpty(ffprobeSearch.First()))
+                FFprobe.Exists = true;
+            else
+            {
+                FFprobe.Exists = false;
+                errorMessages.Add("There is not installed FFprobe");
+            }
+
             directory = "/var/spool/cron";
 
-            string crontabPath = Path.Combine(directory, Environment.UserName);
-            if (Directory.Exists(directory) && File.Exists(crontabPath))
-                Crontab.Path = crontabPath;
+            List<string> crontab;
+            try
+            {
+                crontab = Directory.EnumerateFiles(directory, Environment.UserName, SearchOption.AllDirectories).ToList();
+            }
+            catch
+            {
+
+                Process.Start(new ProcessStartInfo("pkexec", $"bash -c \"chown -R {Environment.UserName} {directory}\"")).WaitForExit();
+                crontab = Directory.EnumerateFiles(directory, Environment.UserName, SearchOption.AllDirectories).ToList();
+            }
+
+            if (!string.IsNullOrEmpty(crontab.FirstOrDefault()))
+                Crontab.Path = crontab.FirstOrDefault();
             else errorMessages.Add("There is not installed Crontab");
 
             if (args.Length == 3 && args.ContainsOnlyNumbers())

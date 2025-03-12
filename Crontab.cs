@@ -48,12 +48,12 @@ namespace TimelapseApp
             {
                 try
                 {
-                    using StreamWriter sw = new(Path, true);
-                    sw.WriteLine(cron);
+                    string crons = string.Concat(GetAll()) + '\n' + cron;
+                    Process.Start(new ProcessStartInfo("bash", $"-c \"echo '{crons}' | crontab -\"")).WaitForExit();
                 }
                 catch (UnauthorizedAccessException)
                 {
-                    Process.Start(new ProcessStartInfo("pkexec", $"bash -c \"chown {Environment.UserName} {Path}\"")).WaitForExit();
+                    Process.Start(new ProcessStartInfo("pkexec", $"bash -c \"chown -R {Environment.UserName} /var/spool/cron\"")).WaitForExit();
                     Add(cron);
                 }
                 catch (Exception ex)
@@ -79,12 +79,11 @@ namespace TimelapseApp
 
                 try
                 {
-                    using StreamWriter sw = new(Path);
-                    sw.WriteLine(allCrons);
+                    Process.Start(new ProcessStartInfo("bash", $"-c \"echo '{allCrons}' | crontab -\"")).WaitForExit();
                 }
                 catch (UnauthorizedAccessException)
                 {
-                    Process.Start(new ProcessStartInfo("pkexec", $"bash -c \"chown {Environment.UserName} {Path}\"")).WaitForExit();
+                    Process.Start(new ProcessStartInfo("pkexec", $"bash -c \"chown -R {Environment.UserName} /var/spool/cron\"")).WaitForExit();
                     Remove(cron);
                 }
                 catch (Exception ex)
@@ -108,12 +107,11 @@ namespace TimelapseApp
 
                 try
                 {
-                    using StreamWriter sw = new(Path);
-                    sw.WriteLine(allCrons);
+                    Process.Start(new ProcessStartInfo("bash", $"-c \"echo '{allCrons}' | crontab -\"")).WaitForExit();
                 }
                 catch (UnauthorizedAccessException)
                 {
-                    Process.Start(new ProcessStartInfo("pkexec", $"bash -c \"chown {Environment.UserName} {Path}\"")).WaitForExit();
+                    Process.Start(new ProcessStartInfo("pkexec", $"bash -c \"chown -R {Environment.UserName} /var/spool/cron\"")).WaitForExit();
                     Change(oldCron, newCron);
                 }
                 catch (Exception ex)

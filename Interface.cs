@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using Gtk;
 
 namespace TimelapseApp
@@ -11,7 +12,7 @@ namespace TimelapseApp
 
         private static string _tempPath = Temp.Path;
 
-        private static bool _timestampChecked = false;
+        private static bool _timestampChecked = Config.GetTimestampChecked();
 
         public class Windows
         {
@@ -50,12 +51,11 @@ namespace TimelapseApp
                 Box rtspEntryBox = new(Orientation.Vertical, 10);
                 box.Add(rtspEntryBox);
 
-                Label rtspLabel = new()
+                rtspEntryBox.Add(new Label()
                 {
                     Text = "Link to stream",
                     Halign = Align.Center
-                };
-                rtspEntryBox.Add(rtspLabel);
+                });
 
                 _rtspEntry = new()
                 {
@@ -70,19 +70,18 @@ namespace TimelapseApp
                     Halign = Align.End,
                     Sensitive = false,
                 };
-                _ffplayButton.Clicked += FfplayButton_Clicked;
+                _ffplayButton.Clicked += static async (s, e) => await FfplayButton_Clicked(s, e);
                 rtspEntryBox.Add(_ffplayButton);
 
 
                 Box saveEntryBox = new(Orientation.Vertical, 10);
                 box.Add(saveEntryBox);
 
-                Label saveLabel = new()
+                saveEntryBox.Add(new Label()
                 {
                     Text = "Path to save",
                     Halign = Align.Center
-                };
-                saveEntryBox.Add(saveLabel);
+                });
 
                 _saveEntry = new()
                 {
@@ -124,11 +123,10 @@ namespace TimelapseApp
                 numberOfDaysBox.Add(childNodb2);
                 numberOfDaysBox.Add(childNodb3);
 
-                Label numberOfDaysLabel = new()
+                childNodb1.Add(new Label()
                 {
                     Text = "Number of days"
-                };
-                childNodb1.Add(numberOfDaysLabel);
+                });
 
                 _numberOfDaysEntry = new()
                 {
@@ -202,14 +200,15 @@ namespace TimelapseApp
                 SaveEntry_Changed(sender, e);
             }
 
-            private static void FfplayButton_Clicked(object sender, EventArgs e)
+            private static async Task FfplayButton_Clicked(object sender, EventArgs e)
             {
                 if (!string.IsNullOrEmpty(_rtspEntry.Text))
                 {
                     if (_rtspEntry.Text.StartsWith("rtsp://"))
                     {
                         if (IsRtspLinkValid(_rtspEntry.Text))
-                            FFplay.Play(_rtspEntry.Text);
+                            await FFplay.Play(_rtspEntry.Text);
+                        else "This RTSP-link is not valid".Message(1);
                     }
                     else "This is not RTSP-link".Message(1);
                 }
@@ -274,6 +273,7 @@ namespace TimelapseApp
         {
             private static Entry _tempEntry;
             private static Entry _crontabEntry;
+            private static bool isThisTheFirstShowing = true;
 
             public SettingsWindow(Window window)
             {
@@ -294,32 +294,27 @@ namespace TimelapseApp
                 Windows.Settings.Add(box);
 
 
-                Box addTimestampBox = new(Orientation.Horizontal, 0)
-                {
-                    Halign = Align.Center,
-                };
-                box.Add(addTimestampBox);
                 CheckButton addTimestampButton = new()
                 {
+                    Halign = Align.Center,
                     Label = "Add timestamp",
                     Active = _timestampChecked
                 };
                 addTimestampButton.Toggled += delegate { _timestampChecked = addTimestampButton.Active; };
-                addTimestampBox.Add(addTimestampButton);
+                box.Add(addTimestampButton);
 
 
                 Box crontabBox = new(Orientation.Vertical, 10);
                 box.Add(crontabBox);
 
-                Label crontabLabel = new()
+                crontabBox.Add(new Label()
                 {
                     Text = "Path to Cron file"
-                };
-                crontabBox.Add(crontabLabel);
+                });
 
                 _crontabEntry = new()
                 {
-                    Halign = Align.Center,
+                    Halign = Align.Fill,
                     Text = Crontab.Path,
                     IsEditable = false
                 };
@@ -329,15 +324,14 @@ namespace TimelapseApp
                 Box configBox = new(Orientation.Vertical, 10);
                 box.Add(configBox);
 
-                Label configLabel = new()
+                configBox.Add(new Label()
                 {
                     Text = "Path to config file"
-                };
-                configBox.Add(configLabel);
+                });
 
                 Entry configEntry = new()
                 {
-                    Halign = Align.Center,
+                    Halign = Align.Fill,
                     Text = Config.Path,
                     IsEditable = false
                 };
@@ -347,15 +341,14 @@ namespace TimelapseApp
                 Box tempBox = new(Orientation.Vertical, 10);
                 box.Add(tempBox);
 
-                Label tempLabel = new()
+                tempBox.Add(new Label()
                 {
                     Text = "Path to temporary files"
-                };
-                tempBox.Add(tempLabel);
+                });
 
                 _tempEntry = new()
                 {
-                    Halign = Align.Center,
+                    Halign = Align.Fill,
                     Text = _tempPath
                 };
                 tempBox.Add(_tempEntry);
@@ -372,6 +365,12 @@ namespace TimelapseApp
             public void ShowAll()
             {
                 Windows.Settings.ShowAll();
+                if (isThisTheFirstShowing)
+                {
+                    "Close this window when you want to apply the settings".Message(2);
+                    isThisTheFirstShowing = false;
+                }
+                
             }
 
             private static void OpenFolderViewButton_Clicked(object sender, EventArgs e)

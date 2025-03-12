@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace TimelapseApp
 {
@@ -8,33 +10,33 @@ namespace TimelapseApp
     {
         public static bool Exists { get; set; }
 
-        public static void Record(string sourceLink, string outputPath, int recordingTime)
+        public static Task Record(string sourceLink, string outputPath, int recordingTime)
         {
             bool localTimeChecked = Config.GetTimestampChecked();
 
             string localTimeString = "-vf drawtext=\"font=Arial:fontsize=70:fontcolor=white:x=0:y=0:text='%{localtime\\:%b %d %Y %H\\\\\\:%M\\\\\\:%S}':box=1:boxcolor=black@0.4:boxborderw=5\" ";
             string args =
-                $"-y -rtsp_transport tcp -hide_banner  -i {sourceLink} -c:v libx264 -b:v 16k -r 1 -an -tune zerolatency -preset ultrafast -crf 25 " +
+                $"-y -rtsp_transport tcp -hide_banner -i {sourceLink} -movflags faststart -c:v libx264 -maxrate 1000k -bufsize 2000k -r 1 -an -tune zerolatency -preset ultrafast -crf 25 " +
                 $"{(localTimeChecked ? localTimeString : "")}" +
                 $"-t {recordingTime} {outputPath}";
 
-            ProcessStartInfo startInfo = new("ffmpeg") { Arguments = args };
+            using Process record = Process.Start(new ProcessStartInfo("ffmpeg", args));
+            record.WaitForExit();
 
-            using Process ffmpeg = Process.Start(startInfo);
-            ffmpeg.WaitForExit();
+            return Task.FromResult(record);
         }
 
-        public static void Accelerate(string sourcePath, string resultPath, int acceleration)
+        public static Task Accelerate(string sourcePath, string resultPath, int acceleration)
         {
-            string args = $"-y -i {sourcePath} -vf setpts=PTS/{acceleration} -an {resultPath}";
+            string args = $"-y -hide_banner -i {sourcePath} -c:v libx264 -r 25 -vf setpts=PTS/{acceleration} -an {resultPath}";
 
-            ProcessStartInfo startInfo = new("ffmpeg") { Arguments = args };
+            using Process accelerate = Process.Start(new ProcessStartInfo("ffmpeg", args));
+            accelerate.WaitForExit();
 
-            using Process ffmpeg = Process.Start(startInfo);
-            ffmpeg.WaitForExit();
+            return Task.FromResult(accelerate);
         }
 
-        public static void Concat(List<string> sourseVideos, string resultPath)
+        public static Task Concat(List<string> sourseVideos, string resultPath)
         {
             sourseVideos.Sort();
 
@@ -45,14 +47,34 @@ namespace TimelapseApp
                     sw.WriteLine($"file '{video}'");
             }
 
-            string args = $"-y -f concat -safe 0 -i {concatFilePath} -c copy {resultPath}";
+            string args = $"-y -hide_banner -f concat -safe 0 -i {concatFilePath} -c copy {resultPath}";
 
-            ProcessStartInfo startInfo = new("ffmpeg") { Arguments = args };
-
-            using Process ffmpeg = Process.Start(startInfo);
-            ffmpeg.WaitForExit();
+            using Process concat = Process.Start(new ProcessStartInfo("ffmpeg", args));
+            concat.WaitForExit();
 
             File.Delete(concatFilePath);
+
+            return Task.FromResult(concat);
+        }
+
+        public static Task Repair(string sourcePath)
+        {
+            string repairedVideoPath = Path.Combine(Temp.Path, "repairedVideo.mp4");
+            string args = $"-y -hide_banner -i {sourcePath} -c:v libx264 -an -copyts -start_number 0 {repairedVideoPath}";
+
+            using Process repair = Process.Start(new ProcessStartInfo("ffmpeg", args));
+            repair.WaitForExit();
+
+            try
+            {
+                File.Move(repairedVideoPath, sourcePath, true);
+            }
+            catch (Exception ex)
+            {
+                ("[FFmpeg.Repair.File.Move()]: " + ex.Message).Message();
+            }
+
+            return Task.FromResult(repair);
         }
     }
 }

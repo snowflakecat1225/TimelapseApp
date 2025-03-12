@@ -28,7 +28,7 @@ namespace TimelapseApp
             Config.Delete();
             Temp.Delete();
             Crontab.Remove(Environment.ProcessPath);
-            "I have finished my work. I hope we will meet again :3".Message();
+            "I have finished all my work. I hope we will meet again :3".Message();
         }
 
         public static void Run(int day, int days, int delay)
@@ -37,7 +37,6 @@ namespace TimelapseApp
             {
                 $"I am waiting for {delay} seconds...".Message();
                 Task.Delay(delay * 1000).Wait();
-                "Everything is alright!".Message();
 
                 string sourceLink = Config.GetSourceLink();
                 string videoPath = Path.Combine(Temp.Path, $"video{day}.mp4");
@@ -51,14 +50,56 @@ namespace TimelapseApp
                 "Recording is started".Message();
                 FFmpeg.Record(sourceLink, videoPath, videoTime);
                 "Recording have finished".Message();
-                Task.Delay(2000).Wait();
+                Task.Delay(1000).Wait();
 
                 if (File.Exists(videoPath))
                 {
-                    "Yes, video file exists, and I am starting to accelerate it".Message();
+                    int realVideoTime = FFprobe.GetInfo.Duration(videoPath);
+                    while (realVideoTime < videoTime)
+                    {
+                        "This video is shorter than required".Message();
+                        FFmpeg.Repair(videoPath);
+                        Task.Delay(1000).Wait();
+
+                        string temporaryVideoPath = Path.Combine(Temp.Path, $"temporaryVideo{day}.mp4");
+
+                        "Recording continues".Message();
+                        FFmpeg.Record(sourceLink, temporaryVideoPath, videoTime - realVideoTime);
+                        "Recording have finished again".Message();
+                        Task.Delay(1000).Wait();
+
+                        string temporaryConcatedVideoPath = Path.Combine(Temp.Path, $"temporaryConcatedVideo{day}.mp4");
+
+                        "Today's and temporary videos are concating".Message();
+                        FFmpeg.Concat(new() { videoPath, temporaryVideoPath }, temporaryConcatedVideoPath);
+                        "Concating have done".Message();
+                        Task.Delay(1000).Wait();
+
+                        try
+                        {
+                            File.Move(temporaryConcatedVideoPath, videoPath, true);
+                        }
+                        catch (Exception ex)
+                        {
+                            ("[Script.File.Move()]: " + ex.Message).Message();
+                        }
+
+                        try
+                        {
+                            File.Delete(temporaryVideoPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            ("[Script.File.Delete()]: " + ex.Message).Message();
+                        }
+
+                        realVideoTime = FFprobe.GetInfo.Duration(videoPath);
+                    }
+                    
+                    $"Yes, video file exists and it's duration is {videoTime}. I am starting to accelerate it".Message();
                     FFmpeg.Accelerate(videoPath, shortVideoPath, 96 + new Random().Next(2));
                     "Accelerating have done".Message();
-                    Task.Delay(2000).Wait();
+                    Task.Delay(1000).Wait();
 
                     try
                     {
@@ -71,7 +112,18 @@ namespace TimelapseApp
 
                     if (File.Exists(shortVideoPath))
                     {
-                        if (day > 1)
+                        if (day == 1)
+                        {
+                            try
+                            {
+                                File.Move(shortVideoPath, concatedVideoPath, true);
+                            }
+                            catch (Exception ex)
+                            {
+                                ("[Script.File.Move()]: " + ex.Message).Message();
+                            }
+                        }
+                        else
                         {
                             List<string> shortVideos = Directory.GetFiles(Temp.Path, "*shortVideo*", SearchOption.TopDirectoryOnly).ToList();
                             List<string> videos = shortVideos;
@@ -82,7 +134,7 @@ namespace TimelapseApp
                             "Yes, short video files exist, and I am starting to concat them".Message();
                             FFmpeg.Concat(videos, concatedTodayVideoPath);
                             "Concating have done".Message();
-                            Task.Delay(2000).Wait();
+                            Task.Delay(1000).Wait();
 
                             foreach (string shortVideo in shortVideos)
                                 File.Delete(shortVideo);
@@ -96,16 +148,16 @@ namespace TimelapseApp
                                 ("[Script.File.Move()]: " + ex.Message).Message();
                             }
                         }
-                    }
-                }
 
-                if (File.Exists(shortVideoPath) || File.Exists(concatedVideoPath))
-                {
-                    DateTime cronTime = new(1, 1, 1, 7, 0, 0);
-                    cronTime = cronTime.AddSeconds(videoTime * day);
-                    string cron = $"{cronTime.Minute} {cronTime.Hour} * * * {Environment.ProcessPath} {day + 1} {days} {cronTime.Second}";
-                    Crontab.Change(Environment.ProcessPath, cron);
-                    "Cron record have changed".Message();
+                        if (File.Exists(concatedVideoPath))
+                        {
+                            DateTime cronTime = new(1, 1, 1, 7, 0, 0);
+                            cronTime = cronTime.AddSeconds(videoTime * day);
+                            string cron = $"{cronTime.Minute} {cronTime.Hour} * * * {Environment.ProcessPath} {day + 1} {days} {cronTime.Second}";
+                            Crontab.Change(Environment.ProcessPath, cron);
+                            "Cron record have changed".Message();
+                        }
+                    }
                 }
             }
             else
