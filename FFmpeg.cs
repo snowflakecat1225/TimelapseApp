@@ -38,8 +38,6 @@ namespace TimelapseApp
 
         public static Task Concat(List<string> sourseVideos, string resultPath)
         {
-            sourseVideos.Sort();
-
             string concatFilePath = Path.Combine(Temp.Path, "concat.txt");
             using (StreamWriter sw = new(concatFilePath))
             {
@@ -60,7 +58,7 @@ namespace TimelapseApp
         public static Task Repair(string sourcePath)
         {
             string repairedVideoPath = Path.Combine(Temp.Path, "repairedVideo.mp4");
-            string args = $"-y -hide_banner -i {sourcePath} -c:v libx264 -an -copyts -start_number 0 {repairedVideoPath}";
+            string args = $"-y -hide_banner -i {sourcePath} -ss 0 -c:v copy -an -copyts -start_number 0 {repairedVideoPath}";
 
             using Process repair = Process.Start(new ProcessStartInfo("ffmpeg", args));
             repair.WaitForExit();

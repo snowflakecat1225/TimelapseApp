@@ -39,7 +39,7 @@ namespace TimelapseApp
                 Task.Delay(delay * 1000).Wait();
 
                 string sourceLink = Config.GetSourceLink();
-                string videoPath = Path.Combine(Temp.Path, $"video{day}.mp4");
+                string videoPath = Path.Combine(Temp.Path, $"video{day}.mkv");
                 string shortVideoPath = Path.Combine(Temp.Path, $"shortVideo{day}.mp4");
                 string concatedVideoPath = Path.Combine(Temp.Path, "concatedVideo.mp4");
                 string concatedTodayVideoPath = Path.Combine(Temp.Path, $"concatedVideo{day}.mp4");
@@ -50,68 +50,81 @@ namespace TimelapseApp
                 "Recording is started".Message();
                 FFmpeg.Record(sourceLink, videoPath, videoTime);
                 "Recording have finished".Message();
-                Task.Delay(1000).Wait();
+                FFmpeg.Repair(videoPath);
 
                 if (File.Exists(videoPath))
                 {
                     int realVideoTime = FFprobe.GetInfo.Duration(videoPath);
-                    while (realVideoTime < videoTime)
+                    if (realVideoTime < videoTime)
                     {
                         "This video is shorter than required".Message();
-                        FFmpeg.Repair(videoPath);
-                        Task.Delay(1000).Wait();
+                        float i = 1;
+                        while (realVideoTime < videoTime)
+                        {
+                            string temporaryVideoPath = Path.Combine(Temp.Path, $"temporaryVideo{day}({i}).mkv");
 
-                        string temporaryVideoPath = Path.Combine(Temp.Path, $"temporaryVideo{day}.mp4");
+                            "Recording continues".Message();
+                            FFmpeg.Record(sourceLink, temporaryVideoPath, videoTime - realVideoTime);
+                            "Recording have finished again".Message();
+                            FFmpeg.Repair(temporaryVideoPath);
 
-                        "Recording continues".Message();
-                        FFmpeg.Record(sourceLink, temporaryVideoPath, videoTime - realVideoTime);
-                        "Recording have finished again".Message();
-                        Task.Delay(1000).Wait();
+                            realVideoTime += FFprobe.GetInfo.Duration(temporaryVideoPath);
+                            i++;
+                        }
+
+                        List<string> temporaryVideos = Directory.GetFiles(Temp.Path, "*temporaryVideo*", SearchOption.TopDirectoryOnly).ToList();
+                        temporaryVideos.Sort();
+                        List<string> videos = temporaryVideos;
+
+                        if (File.Exists(videoPath))
+                            videos.Insert(0, videoPath);
 
                         string temporaryConcatedVideoPath = Path.Combine(Temp.Path, $"temporaryConcatedVideo{day}.mp4");
 
                         "Today's and temporary videos are concating".Message();
-                        FFmpeg.Concat(new() { videoPath, temporaryVideoPath }, temporaryConcatedVideoPath);
+                        FFmpeg.Concat(videos, temporaryConcatedVideoPath);
                         "Concating have done".Message();
-                        Task.Delay(1000).Wait();
 
+                        if (File.Exists(temporaryConcatedVideoPath))
+                        {
+                            foreach (string temporaryVideo in temporaryVideos)
+                            {
+                                try
+                                {
+                                    File.Delete(temporaryVideo);
+                                }
+                                catch (Exception ex)
+                                {
+                                    ("[Script.File.Delete()]: " + ex.Message).Message();
+                                }
+                            }
+
+                            try
+                            {
+                                File.Move(temporaryConcatedVideoPath, videoPath, true);
+                            }
+                            catch (Exception ex)
+                            {
+                                ("[Script.File.Move()]: " + ex.Message).Message();
+                            }
+                        }
+                    }
+
+                    $"Yes, video file exists and it's duration is {videoTime}. I am starting to accelerate it".Message();
+                    FFmpeg.Accelerate(videoPath, shortVideoPath, 96 + new Random().Next(2));
+                    "Accelerating have done".Message();
+
+                    if (File.Exists(shortVideoPath))
+                    {
                         try
                         {
-                            File.Move(temporaryConcatedVideoPath, videoPath, true);
-                        }
-                        catch (Exception ex)
-                        {
-                            ("[Script.File.Move()]: " + ex.Message).Message();
-                        }
-
-                        try
-                        {
-                            File.Delete(temporaryVideoPath);
+                            File.Delete(videoPath);
                         }
                         catch (Exception ex)
                         {
                             ("[Script.File.Delete()]: " + ex.Message).Message();
                         }
 
-                        realVideoTime = FFprobe.GetInfo.Duration(videoPath);
-                    }
-                    
-                    $"Yes, video file exists and it's duration is {videoTime}. I am starting to accelerate it".Message();
-                    FFmpeg.Accelerate(videoPath, shortVideoPath, 96 + new Random().Next(2));
-                    "Accelerating have done".Message();
-                    Task.Delay(1000).Wait();
-
-                    try
-                    {
-                        File.Delete(videoPath);
-                    }
-                    catch (Exception ex)
-                    {
-                        ("[Script.File.Delete()]: " + ex.Message).Message();
-                    }
-
-                    if (File.Exists(shortVideoPath))
-                    {
                         if (day == 1)
                         {
                             try
@@ -126,26 +139,38 @@ namespace TimelapseApp
                         else
                         {
                             List<string> shortVideos = Directory.GetFiles(Temp.Path, "*shortVideo*", SearchOption.TopDirectoryOnly).ToList();
+                            shortVideos.Sort();
                             List<string> videos = shortVideos;
 
                             if (File.Exists(concatedVideoPath))
-                                videos.Add(concatedVideoPath);
+                                videos.Insert(0, concatedVideoPath);
 
                             "Yes, short video files exist, and I am starting to concat them".Message();
                             FFmpeg.Concat(videos, concatedTodayVideoPath);
                             "Concating have done".Message();
-                            Task.Delay(1000).Wait();
 
-                            foreach (string shortVideo in shortVideos)
-                                File.Delete(shortVideo);
+                            if (File.Exists(concatedTodayVideoPath))
+                            {
+                                foreach (string shortVideo in shortVideos)
+                                {
+                                    try
+                                    {
+                                        File.Delete(shortVideo);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        ("[Script.File.Delete()]: " + ex.Message).Message();
+                                    }
+                                }
 
-                            try
-                            {
-                                File.Move(concatedTodayVideoPath, concatedVideoPath, true);
-                            }
-                            catch (Exception ex)
-                            {
-                                ("[Script.File.Move()]: " + ex.Message).Message();
+                                try
+                                {
+                                    File.Move(concatedTodayVideoPath, concatedVideoPath, true);
+                                }
+                                catch (Exception ex)
+                                {
+                                    ("[Script.File.Move()]: " + ex.Message).Message();
+                                }
                             }
                         }
 
