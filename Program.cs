@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
+using System.Threading;
 using Gtk;
 
 namespace TimelapseApp
@@ -12,6 +13,10 @@ namespace TimelapseApp
     {
         public static void Main(string[] args)
         {
+            using Mutex mutex = new(true, Process.GetCurrentProcess().ProcessName, out bool createdNew);
+            if (!createdNew)
+                return;
+
             List<string> errorMessages = new();
 
             try
