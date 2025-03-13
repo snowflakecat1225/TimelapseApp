@@ -24,7 +24,7 @@ namespace TimelapseApp
             }
             catch (Exception ex)
             {
-                ("[Temp.Create()]: " + ex.Message).Message(1);
+                ("[Temp.Create()]: " + ex.Message).Message();
             }
         }
 
@@ -36,7 +36,7 @@ namespace TimelapseApp
             }
             catch (Exception ex)
             {
-                ("[Temp.Delete()]: " + ex.Message).Message(1);
+                ("[Temp.Delete()]: " + ex.Message).Message();
             }
         }
     }

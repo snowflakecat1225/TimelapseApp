@@ -1,6 +1,6 @@
 using System;
+using System.Diagnostics;
 using System.IO;
-using System.Net.Sockets;
 using System.Threading.Tasks;
 using Gtk;
 
@@ -158,6 +158,15 @@ namespace TimelapseApp
                 commonStartButtonBox.Add(childCsbb2);
                 commonStartButtonBox.Add(childCsbb3);
 
+                Button clearButton = new()
+                {
+                    Label = "Clear",
+                    Halign = Align.Start,
+                    Sensitive = File.Exists(Path.Combine(Config.Path, $"{Process.GetCurrentProcess().ProcessName}.conf"))
+                };
+                clearButton.Clicked += ClearButton_Clicked;
+                childCsbb1.Add(clearButton);
+
                 _startButton = new()
                 {
                     Label = "Start recording",
@@ -202,17 +211,9 @@ namespace TimelapseApp
 
             private static async Task FfplayButton_Clicked(object sender, EventArgs e)
             {
-                if (!string.IsNullOrEmpty(_rtspEntry.Text))
-                {
-                    if (_rtspEntry.Text.StartsWith("rtsp://"))
-                    {
-                        if (IsRtspLinkValid(_rtspEntry.Text))
-                            await FFplay.Play(_rtspEntry.Text);
-                        else "This RTSP-link is not valid".Message(1);
-                    }
-                    else "This is not RTSP-link".Message(1);
-                }
-                else "Empty input field".Message(1);
+                if (_rtspEntry.Text.IsRtspLinkValid())
+                    await FFplay.Play(_rtspEntry.Text);
+                else "This RTSP-link is not valid".Message();
             }
 
             private static void OpenFolderViewButton_Clicked(object sender, EventArgs e)
@@ -236,31 +237,40 @@ namespace TimelapseApp
                 fileChooser.Destroy();
             }
 
-            private static bool IsRtspLinkValid(string link)
+            private static void ClearButton_Clicked(object sender, EventArgs e)
             {
-                try
+                MessageDialog clearConfirmationDialog = new(
+                    Windows.Main,
+                    DialogFlags.Modal,
+                    MessageType.Question,
+                    ButtonsType.YesNo,
+                    "Are you sure you want to clear all program data?");
+                int response = clearConfirmationDialog.Run();
+                clearConfirmationDialog.Destroy();
+                
+                if (response == (int)ResponseType.Yes)
                 {
-                    Uri uri = new(link);
-                    string host = uri.Host;
-                    int port = uri.Port == -1 ? 554 : uri.Port;
+                    MessageDialog clearInformationDialog = new(
+                        Windows.Main,
+                        DialogFlags.Modal,
+                        MessageType.Info,
+                        ButtonsType.Ok,
+                        "If nesessary, make a backup copy of a program data");
+                    clearInformationDialog.Run();
+                    clearInformationDialog.Destroy();
 
-                    using TcpClient client = new();
-                    client.Connect(host, port);
-
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    ex.Message.Message(1);
-                    return false;
+                    Script.Delete();
                 }
             }
 
             private static void StartButton_Clicked(object sender, EventArgs e)
             {
-                int days = !string.IsNullOrEmpty(_numberOfDaysEntry.Text) ? int.Parse(_numberOfDaysEntry.Text) : 180;
-                Script.Create(_rtspEntry.Text, _saveEntry.Text, _timestampChecked, days, _tempPath);
-                $"Done! This timelapse will be created over {days} days".Message(1);
+                if (_rtspEntry.Text.IsRtspLinkValid())
+                {
+                    int days = !string.IsNullOrEmpty(_numberOfDaysEntry.Text) ? int.Parse(_numberOfDaysEntry.Text) : 180;
+                    Script.Create(_rtspEntry.Text, _saveEntry.Text, _timestampChecked, days, _tempPath);
+                    $"Done! This timelapse will be created over {days} days".Message();
+                }
             }
 
             private static void OpenSettingsButton_Clicked(object sender, EventArgs e)
@@ -367,7 +377,7 @@ namespace TimelapseApp
                 Windows.Settings.ShowAll();
                 if (isThisTheFirstShowing)
                 {
-                    "Close this window when you want to apply the settings".Message(2);
+                    "Close this window when you want to apply the settings".Message(true);
                     isThisTheFirstShowing = false;
                 }
                 
@@ -398,7 +408,7 @@ namespace TimelapseApp
             {
                 if (_tempEntry.Text != Path.Combine(Path.GetTempPath(), "TimelapseApp") && !Directory.Exists(_tempEntry.Text))
                 {
-                    "Temporary directory doesn't exist".Message(2);
+                    "Temporary directory doesn't exist".Message(true);
                     e.RetVal = true;
                 }
                 else _tempPath = _tempEntry.Text;

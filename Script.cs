@@ -19,7 +19,7 @@ namespace TimelapseApp
         {
             try
             {
-                File.Move(Path.Combine(Temp.Path, "concatedVideo.mp4"), Config.GetResultPath());
+                File.Move(Path.Combine(Temp.Path, "concatedVideo.mp4"), Path.Combine(Config.GetResultPath(), ""));
             }
             catch (Exception ex)
             {

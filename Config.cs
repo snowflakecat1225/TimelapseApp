@@ -25,7 +25,7 @@ namespace TimelapseApp
             }
             catch (Exception ex)
             {
-                ("[Config.Create()]: " + ex.Message).Message(1);
+                ("[Config.Create()]: " + ex.Message).Message();
             }
         }
 
@@ -49,7 +49,7 @@ namespace TimelapseApp
                         3 => "GetTempPath()",
                         _ => string.Empty,
                     };
-                    ($"[Config.{method}]: " + ex.Message).Message(1);
+                    ($"[Config.{method}]: " + ex.Message).Message();
                 }
             }
             return string.Empty;
@@ -75,7 +75,7 @@ namespace TimelapseApp
             }
             catch (Exception ex)
             {
-                ("[Config.Delete()]: " + ex.Message).Message(1);
+                ("[Config.Delete()]: " + ex.Message).Message();
             }
         }
     }

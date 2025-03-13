@@ -10,14 +10,12 @@ namespace TimelapseApp
 
         private static string ProcessResult()
         {
-            Process process = Process.Start(startInfo);
-            string result = string.Empty;
-            if (process != null)
-            {
-                result = process.StandardOutput.ReadToEnd().Replace('\n', '\0');
-                process.WaitForExit();
-            }
-            return result;
+            using Process ffprobe = new();
+            ffprobe.StartInfo = startInfo;
+            ffprobe.Start();
+            ffprobe.WaitForExit();
+
+            return ffprobe.StandardOutput.ReadToEnd().Replace('\n', '\0');
         }
 
         public class GetInfo

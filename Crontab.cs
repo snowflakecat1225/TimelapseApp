@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 
 namespace TimelapseApp
@@ -16,11 +15,12 @@ namespace TimelapseApp
         {
             List<string> crons = new();
 
-            using (var process = Process.Start(new ProcessStartInfo("bash", "-c \"crontab -l\"") 
-                { RedirectStandardOutput = true }))
+            using (Process crontab = new())
             {
-                process.WaitForExit();
-                crons = crons.Concat(process.StandardOutput.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries)).ToList();
+                crontab.StartInfo = new ProcessStartInfo("bash", "-c \"crontab -l\"") { RedirectStandardOutput = true };
+                crontab.Start();
+                crontab.WaitForExit();
+                crons = crons.Concat(crontab.StandardOutput.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries)).ToList();
             }
 
             return crons;
@@ -58,7 +58,7 @@ namespace TimelapseApp
                 }
                 catch (Exception ex)
                 {
-                    ("[Crontab.Add()]: " + ex.Message).Message(1);
+                    ("[Crontab.Add()]: " + ex.Message).Message();
                 }
             }
             else Change(Get(Environment.ProcessPath), cron);
@@ -88,7 +88,7 @@ namespace TimelapseApp
                 }
                 catch (Exception ex)
                 {
-                    ("[Crontab.Remove()]: " + ex.Message).Message(1);
+                    ("[Crontab.Remove()]: " + ex.Message).Message();
                 }
             }
         }
@@ -116,7 +116,7 @@ namespace TimelapseApp
                 }
                 catch (Exception ex)
                 {
-                    ("[Crontab.Change()]: " + ex.Message).Message(1);
+                    ("[Crontab.Change()]: " + ex.Message).Message();
                 }
             }
             else Add(newCron);

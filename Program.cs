@@ -34,7 +34,7 @@ namespace TimelapseApp
             List<string> ffplaySearch = Directory.EnumerateFiles(directory, "ffplay", SearchOption.AllDirectories).ToList();
             List<string> ffprobeSearch = Directory.EnumerateFiles(directory, "ffprobe", SearchOption.AllDirectories).ToList();
 
-            if (ffmpegSearch.Count > 0 && !string.IsNullOrEmpty(ffmpegSearch.First()))
+            if (ffmpegSearch.Count > 0)
                 FFmpeg.Exists = true;
             else
             {
@@ -42,7 +42,7 @@ namespace TimelapseApp
                 errorMessages.Add("There is not installed FFmpeg");
             }
 
-            if (ffplaySearch.Count > 0 && !string.IsNullOrEmpty(ffplaySearch.First()))
+            if (ffplaySearch.Count > 0)
                 FFplay.Exists = true;
             else
             {
@@ -50,7 +50,7 @@ namespace TimelapseApp
                 errorMessages.Add("There is not installed FFplay");
             }
 
-            if (ffprobeSearch.Count > 0 && !string.IsNullOrEmpty(ffprobeSearch.First()))
+            if (ffprobeSearch.Count > 0)
                 FFprobe.Exists = true;
             else
             {
@@ -67,7 +67,6 @@ namespace TimelapseApp
             }
             catch
             {
-
                 Process.Start(new ProcessStartInfo("pkexec", $"bash -c \"chown -R {Environment.UserName} {directory}\"")).WaitForExit();
                 crontab = Directory.EnumerateFiles(directory, Environment.UserName, SearchOption.AllDirectories).ToList();
             }
@@ -92,7 +91,7 @@ namespace TimelapseApp
                 Application.Init();
                 Interface.IsInitialised = true;
                 foreach (string error in errorMessages)
-                    error.Message(1);
+                    error.Message();
                 Interface.Init();
                 Application.Run();
             }
