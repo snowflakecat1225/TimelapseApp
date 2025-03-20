@@ -91,7 +91,7 @@ namespace TimelapseApp
                 Application.Init();
                 Interface.IsInitialised = true;
                 foreach (string error in errorMessages)
-                    error.Message();
+                    error.Message(false, false);
                 Interface.Init();
                 Application.Run();
             }

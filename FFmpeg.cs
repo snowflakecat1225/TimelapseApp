@@ -69,7 +69,7 @@ namespace TimelapseApp
 
         public static Task Concat(List<string> sourseVideos, string outputPath)
         {
-            if (sourseVideos.Count == 0)
+            if (sourseVideos.Count < 1)
             {
                 $"[FFmpeg.Concat()]: There is no videos to concat".Message();
                 return Task.FromException(new FileNotFoundException("File was not found", outputPath));
@@ -90,7 +90,10 @@ namespace TimelapseApp
             using (StreamWriter sw = new(concatFilePath))
             {
                 foreach (string video in sourseVideos)
+                {
                     sw.WriteLine($"file '{video}'");
+                    $"file '{video}'".Message();
+                }
             }
 
             string args = $"-y -hide_banner -f concat -safe 0 -i {concatFilePath} -c copy {outputPath}";

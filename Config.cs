@@ -69,13 +69,16 @@ namespace TimelapseApp
 
         public static void Delete()
         {
-            try
+            if (File.Exists(_configPath))
             {
-                File.Delete(_configPath);
-            }
-            catch (Exception ex)
-            {
-                ("[Config.Delete()]: " + ex.Message).Message();
+                try
+                {
+                    File.Delete(_configPath);
+                }
+                catch (Exception ex)
+                {
+                    ("[Config.Delete()]: " + ex.Message).Message();
+                }
             }
         }
     }

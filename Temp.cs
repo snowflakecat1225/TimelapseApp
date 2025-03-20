@@ -30,13 +30,16 @@ namespace TimelapseApp
 
         public static void Delete()
         {
-            try
+            if (Directory.Exists(Path))
             {
-                Directory.Delete(Path, true);
-            }
-            catch (Exception ex)
-            {
-                ("[Temp.Delete()]: " + ex.Message).Message();
+                try
+                {
+                    Directory.Delete(Path, true);
+                }
+                catch (Exception ex)
+                {
+                    ("[Temp.Delete()]: " + ex.Message).Message();
+                }
             }
         }
     }

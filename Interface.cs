@@ -29,6 +29,7 @@ namespace TimelapseApp
         {
             private static Button _startButton;
             private static Button _ffplayButton;
+            private static Button _clearButton;
 
             private static Entry _rtspEntry;
             private static Entry _saveEntry;
@@ -158,14 +159,14 @@ namespace TimelapseApp
                 commonStartButtonBox.Add(childCsbb2);
                 commonStartButtonBox.Add(childCsbb3);
 
-                Button clearButton = new()
+                _clearButton = new()
                 {
                     Label = "Clear",
                     Halign = Align.Start,
                     Sensitive = File.Exists(Path.Combine(Config.Path, $"{Process.GetCurrentProcess().ProcessName}.conf"))
                 };
-                clearButton.Clicked += ClearButton_Clicked;
-                childCsbb1.Add(clearButton);
+                _clearButton.Clicked += ClearButton_Clicked;
+                childCsbb1.Add(_clearButton);
 
                 _startButton = new()
                 {
@@ -213,7 +214,7 @@ namespace TimelapseApp
             {
                 if (_rtspEntry.Text.IsRtspLinkValid())
                     await FFplay.Play(_rtspEntry.Text);
-                else "This RTSP-link is not valid".Message();
+                else "This RTSP-link is not valid".Message(false, false);
             }
 
             private static void OpenFolderViewButton_Clicked(object sender, EventArgs e)
@@ -260,17 +261,42 @@ namespace TimelapseApp
                     clearInformationDialog.Destroy();
 
                     Script.Delete();
+                    _clearButton.Sensitive = false;
                 }
             }
 
             private static void StartButton_Clicked(object sender, EventArgs e)
             {
-                if (_rtspEntry.Text.IsRtspLinkValid())
+                if (!_rtspEntry.Text.IsRtspLinkValid())
+                    return;
+
+                if (!Directory.Exists(_saveEntry.Text))
                 {
-                    int days = !string.IsNullOrEmpty(_numberOfDaysEntry.Text) ? int.Parse(_numberOfDaysEntry.Text) : 180;
-                    Script.Create(_rtspEntry.Text, _saveEntry.Text, _timestampChecked, days, _tempPath);
-                    $"Done! This timelapse will be created over {days} days".Message();
+                    "The path to save does not exist".Message(false, false);
+                    return;
                 }
+                
+                if (!_numberOfDaysEntry.Text.IsNumber())
+                {
+                    "The days count entry does not contain number".Message(false, false);
+                    return;
+                }
+
+                int days = !string.IsNullOrEmpty(_numberOfDaysEntry.Text) ? int.Parse(_numberOfDaysEntry.Text) : 180;
+                if (days < 1)
+                {
+                    "This count of days is too small".Message(false, false);
+                    return;
+                }
+                if (days > 16 * 60 * 60)
+                {
+                    "Do you really need the program to run for that long?".Message(false, false);
+                    return;
+                }
+                
+                Script.Create(_rtspEntry.Text, _saveEntry.Text, _timestampChecked, days, _tempPath);
+                _clearButton.Sensitive = true;
+                $"Done! This timelapse will be created over {days} days".Message(false, false);
             }
 
             private static void OpenSettingsButton_Clicked(object sender, EventArgs e)
@@ -377,7 +403,7 @@ namespace TimelapseApp
                 Windows.Settings.ShowAll();
                 if (isThisTheFirstShowing)
                 {
-                    "Close this window when you want to apply the settings".Message(true);
+                    "Close this window when you want to apply the settings".Message(true, false);
                     isThisTheFirstShowing = false;
                 }
                 
@@ -408,7 +434,7 @@ namespace TimelapseApp
             {
                 if (_tempEntry.Text != Path.Combine(Path.GetTempPath(), "TimelapseApp") && !Directory.Exists(_tempEntry.Text))
                 {
-                    "Temporary directory doesn't exist".Message(true);
+                    "Temporary directory doesn't exist".Message(true, false);
                     e.RetVal = true;
                 }
                 else _tempPath = _tempEntry.Text;
