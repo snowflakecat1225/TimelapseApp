@@ -3,16 +3,18 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Gtk;
+using Pango;
 
 namespace TimelapseApp
 {
     public static class Interface
     {
         public static bool IsInitialised { get; set; } = false;
+        private static bool _timestampChecked = Config.GetTimestampChecked();
 
         private static string _tempPath = Temp.Path;
 
-        private static bool _timestampChecked = Config.GetTimestampChecked();
+        
 
         public class Windows
         {
@@ -40,6 +42,34 @@ namespace TimelapseApp
                 Windows.Main.Destroyed += delegate { Application.Quit(); };
 
 
+                var titlebar = new HeaderBar
+                {
+                    Title = Windows.Main.Title,
+                    ShowCloseButton = true
+                };
+                Windows.Main.Titlebar = titlebar;
+
+                var helpButton = new Button()
+                {
+                    Image = new Image(Stock.DialogQuestion, IconSize.Menu)
+                };
+                helpButton.Clicked += (sender, e) =>
+                {
+                    MessageDialog messageDialog = new(
+                        Windows.Main,
+                        DialogFlags.Modal,
+                        MessageType.Info,
+                        ButtonsType.Close,
+                        Language.GetPhrase(0))
+                    {
+                        Title = Language.GetPhrase(1)
+                    };
+                    messageDialog.Run();
+                    messageDialog.Destroy();
+                };
+                titlebar.PackStart(helpButton);
+
+
                 Box box = new(Orientation.Vertical, 15)
                 {
                     Margin = 45,
@@ -54,7 +84,7 @@ namespace TimelapseApp
 
                 rtspEntryBox.Add(new Label()
                 {
-                    Text = "Link to stream",
+                    Text = Language.GetPhrase(2),
                     Halign = Align.Center
                 });
 
@@ -67,7 +97,7 @@ namespace TimelapseApp
 
                 _ffplayButton = new()
                 {
-                    Label = "Check stream",
+                    Label = Language.GetPhrase(3),
                     Halign = Align.End,
                     Sensitive = false,
                 };
@@ -80,7 +110,7 @@ namespace TimelapseApp
 
                 saveEntryBox.Add(new Label()
                 {
-                    Text = "Path to save",
+                    Text = Language.GetPhrase(4),
                     Halign = Align.Center
                 });
 
@@ -94,7 +124,7 @@ namespace TimelapseApp
 
                 Button openFolderViewButton = new()
                 {
-                    Label = "Open",
+                    Label = Language.GetPhrase(5),
                     Halign = Align.End
                 };
                 openFolderViewButton.Clicked += OpenFolderViewButton_Clicked;
@@ -126,7 +156,7 @@ namespace TimelapseApp
 
                 childNodb1.Add(new Label()
                 {
-                    Text = "Number of days"
+                    Text = Language.GetPhrase(6),
                 });
 
                 _numberOfDaysEntry = new()
@@ -161,16 +191,16 @@ namespace TimelapseApp
 
                 _clearButton = new()
                 {
-                    Label = "Clear",
+                    Label = Language.GetPhrase(7),
                     Halign = Align.Start,
-                    Sensitive = File.Exists(Path.Combine(Config.Path, $"{Process.GetCurrentProcess().ProcessName}.conf"))
+                    Sensitive = Config.Exists | !string.IsNullOrEmpty(Crontab.Get(Environment.ProcessPath)) | Directory.Exists(Temp.Path)
                 };
                 _clearButton.Clicked += ClearButton_Clicked;
                 childCsbb1.Add(_clearButton);
 
                 _startButton = new()
                 {
-                    Label = "Start recording",
+                    Label = Language.GetPhrase(8),
                     Halign = Align.Center,
                     Sensitive = false,
                 };
@@ -180,7 +210,7 @@ namespace TimelapseApp
                 Button openSettingsButton = new()
                 {
                     Halign = Align.End,
-                    Label = "Settings"
+                    Label = Language.GetPhrase(9)
                 };
                 openSettingsButton.Clicked += OpenSettingsButton_Clicked;
                 childCsbb3.Add(openSettingsButton);
@@ -195,7 +225,7 @@ namespace TimelapseApp
 
             private static void SaveEntry_Changed(object sender, EventArgs e)
             {
-                if (FFmpeg.Exists && FFplay.Exists && Crontab.FileExists &&
+                if (FFmpeg.Exists && FFplay.Exists && Crontab.Exists &&
                     !string.IsNullOrEmpty(_rtspEntry.Text) && !string.IsNullOrEmpty(_saveEntry.Text))
                     _startButton.Sensitive = true;
                 else _startButton.Sensitive = false;
@@ -214,17 +244,17 @@ namespace TimelapseApp
             {
                 if (_rtspEntry.Text.IsRtspLinkValid())
                     await FFplay.Play(_rtspEntry.Text);
-                else "This RTSP-link is not valid".Message(false, false);
+                else Language.GetPhrase(10).Message(false, false);
             }
 
             private static void OpenFolderViewButton_Clicked(object sender, EventArgs e)
             {
                 FileChooserDialog fileChooser = new(
-                    "Select the path to save the file",
+                    Language.GetPhrase(11),
                     Windows.Main,
                     FileChooserAction.SelectFolder,
-                    "Cancel", ResponseType.Cancel,
-                    "Open", ResponseType.Accept)
+                    Language.GetPhrase(12), ResponseType.Cancel,
+                    Language.GetPhrase(5), ResponseType.Accept)
                 {
                     SelectMultiple = false
                 };
@@ -245,7 +275,7 @@ namespace TimelapseApp
                     DialogFlags.Modal,
                     MessageType.Question,
                     ButtonsType.YesNo,
-                    "Are you sure you want to clear all program data?");
+                    Language.GetPhrase(13));
                 int response = clearConfirmationDialog.Run();
                 clearConfirmationDialog.Destroy();
                 
@@ -256,7 +286,7 @@ namespace TimelapseApp
                         DialogFlags.Modal,
                         MessageType.Info,
                         ButtonsType.Ok,
-                        "If nesessary, make a backup copy of a program data");
+                        Language.GetPhrase(14));
                     clearInformationDialog.Run();
                     clearInformationDialog.Destroy();
 
@@ -272,52 +302,62 @@ namespace TimelapseApp
 
                 if (!Directory.Exists(_saveEntry.Text))
                 {
-                    "The path to save does not exist".Message(false, false);
+                    Language.GetPhrase(15).Message(false, false);
                     return;
                 }
                 
                 if (!_numberOfDaysEntry.Text.IsNumber())
                 {
-                    "The days count entry does not contain number".Message(false, false);
+                    Language.GetPhrase(16).Message(false, false);
                     return;
                 }
 
                 int days = !string.IsNullOrEmpty(_numberOfDaysEntry.Text) ? int.Parse(_numberOfDaysEntry.Text) : 180;
                 if (days < 1)
                 {
-                    "This count of days is too small".Message(false, false);
+                    Language.GetPhrase(17).Message(false, false);
                     return;
                 }
                 if (days > 16 * 60 * 60)
                 {
-                    "Do you really need the program to run for that long?".Message(false, false);
+                    Language.GetPhrase(18).Message(false, false);
                     return;
                 }
                 
                 Script.Create(_rtspEntry.Text, _saveEntry.Text, _timestampChecked, days, _tempPath);
                 _clearButton.Sensitive = true;
-                $"Done! This timelapse will be created over {days} days".Message(false, false);
+                MessageDialog messageDialog = new(
+                    Windows.Main,
+                    DialogFlags.Modal,
+                    MessageType.Info,
+                    ButtonsType.Close,
+                    $"{Language.GetPhrase(19)} {days} {Language.GetPhrase(20)}")
+                {
+                    Title = Language.GetPhrase(21)
+                };
+                messageDialog.Run();
+    
+                messageDialog.Destroy();
             }
 
             private static void OpenSettingsButton_Clicked(object sender, EventArgs e)
             {
-                new SettingsWindow(Windows.Main).ShowAll();
+                new SettingsWindow().ShowAll();
             }
         }
 
         private class SettingsWindow
         {
             private static Entry _tempEntry;
-            private static Entry _crontabEntry;
             private static bool isThisTheFirstShowing = true;
 
-            public SettingsWindow(Window window)
+            public SettingsWindow()
             {
-                Windows.Settings = new("Settings")
+                Windows.Settings = new(Language.GetPhrase(9))
                 {
                     Resizable = false,
                     Modal = true,
-                    TransientFor = window
+                    TransientFor = Windows.Main
                 };
                 Windows.Settings.DeleteEvent += Settings_DeleteEvent;
 
@@ -333,28 +373,11 @@ namespace TimelapseApp
                 CheckButton addTimestampButton = new()
                 {
                     Halign = Align.Center,
-                    Label = "Add timestamp",
+                    Label = Language.GetPhrase(22),
                     Active = _timestampChecked
                 };
                 addTimestampButton.Toggled += delegate { _timestampChecked = addTimestampButton.Active; };
                 box.Add(addTimestampButton);
-
-
-                Box crontabBox = new(Orientation.Vertical, 10);
-                box.Add(crontabBox);
-
-                crontabBox.Add(new Label()
-                {
-                    Text = "Path to Cron file"
-                });
-
-                _crontabEntry = new()
-                {
-                    Halign = Align.Fill,
-                    Text = Crontab.Path,
-                    IsEditable = false
-                };
-                crontabBox.Add(_crontabEntry);
 
 
                 Box configBox = new(Orientation.Vertical, 10);
@@ -362,7 +385,7 @@ namespace TimelapseApp
 
                 configBox.Add(new Label()
                 {
-                    Text = "Path to config file"
+                    Text = Language.GetPhrase(24)
                 });
 
                 Entry configEntry = new()
@@ -379,7 +402,7 @@ namespace TimelapseApp
 
                 tempBox.Add(new Label()
                 {
-                    Text = "Path to temporary files"
+                    Text = Language.GetPhrase(25)
                 });
 
                 _tempEntry = new()
@@ -391,7 +414,7 @@ namespace TimelapseApp
 
                 Button openFolderViewButton = new()
                 {
-                    Label = "Open",
+                    Label = Language.GetPhrase(5),
                     Halign = Align.End
                 };
                 openFolderViewButton.Clicked += OpenFolderViewButton_Clicked;
@@ -403,7 +426,17 @@ namespace TimelapseApp
                 Windows.Settings.ShowAll();
                 if (isThisTheFirstShowing)
                 {
-                    "Close this window when you want to apply the settings".Message(true, false);
+                    MessageDialog messageDialog = new(
+                        Windows.Settings,
+                        DialogFlags.Modal,
+                        MessageType.Info,
+                        ButtonsType.Close,
+                        Language.GetPhrase(26))
+                    {
+                        Title = Language.GetPhrase(27)
+                    };
+                    messageDialog.Run();
+                    messageDialog.Destroy();
                     isThisTheFirstShowing = false;
                 }
                 
@@ -412,11 +445,11 @@ namespace TimelapseApp
             private static void OpenFolderViewButton_Clicked(object sender, EventArgs e)
             {
                 FileChooserDialog fileChooser = new(
-                    "Select the path to save the file",
+                    Language.GetPhrase(28),
                     Windows.Settings,
                     FileChooserAction.SelectFolder,
-                    "Cancel", ResponseType.Cancel,
-                    "Open", ResponseType.Accept)
+                    Language.GetPhrase(12), ResponseType.Cancel,
+                    Language.GetPhrase(5), ResponseType.Accept)
                 {
                     SelectMultiple = false
                 };
@@ -434,7 +467,7 @@ namespace TimelapseApp
             {
                 if (_tempEntry.Text != Path.Combine(Path.GetTempPath(), "TimelapseApp") && !Directory.Exists(_tempEntry.Text))
                 {
-                    "Temporary directory doesn't exist".Message(true, false);
+                    Language.GetPhrase(29).Message(true, false);
                     e.RetVal = true;
                 }
                 else _tempPath = _tempEntry.Text;

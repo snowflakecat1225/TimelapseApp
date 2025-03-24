@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using Gdk;
 
 namespace TimelapseApp
 {
@@ -13,12 +14,12 @@ namespace TimelapseApp
         public static Task Record(string sourceLink, string outputPath, int recordingTime)
         {
             if (!sourceLink.IsRtspLinkValid())
-                return Task.FromResult(new InvalidDataException("RTSP-link is invalid"));
+                return Task.FromResult(new InvalidDataException(Language.GetPhrase(10)));
 
             if (recordingTime < 1)
             {
-                $"[FFmpeg.Record()]: The video time index {recordingTime} is lower than it could be".Message();
-                return Task.FromException(new IndexOutOfRangeException($"The acceleration index {recordingTime} is lower than it could be"));
+                $"[FFmpeg.Record()]: {Language.GetPhrase(40)} {recordingTime} {Language.GetPhrase(41)}".Message();
+                return Task.FromException(new IndexOutOfRangeException($"{Language.GetPhrase(40)} {recordingTime} {Language.GetPhrase(41)}"));
             }
 
             bool localTimeChecked = Config.GetTimestampChecked();
@@ -31,11 +32,20 @@ namespace TimelapseApp
 
             using Process record = new();
             record.StartInfo = new("ffmpeg", args);
+
+            DateTime startTime = DateTime.Now;
+
             record.Start();
             record.WaitForExit();
 
+            DateTime endTime = DateTime.Now;
+
+            int workTime = (endTime - startTime).Hours * 3600 + (endTime - startTime).Minutes * 60 + (endTime - startTime).Seconds;
+
             if (!File.Exists(outputPath))
-                $"[FFmpeg.Record()]: Video was not recorded".Message();
+                $"[FFmpeg.Record()]: {Language.GetPhrase(42)}".Message();
+            else if (Math.Abs(recordingTime - workTime) <= Math.Abs(recordingTime * 5 / 100d))
+                Repair(outputPath);
 
             return Task.FromResult(record);
         }
@@ -44,14 +54,14 @@ namespace TimelapseApp
         {
             if (!File.Exists(sourcePath))
             {
-                $"[FFmpeg.Accelerate()]: File {sourcePath} was not found".Message();
-                return Task.FromException(new FileNotFoundException("File was not found", sourcePath));
+                $"[FFmpeg.Accelerate()]: {Language.GetPhrase(43)} {sourcePath} {Language.GetPhrase(44)}".Message();
+                return Task.FromException(new FileNotFoundException($"{Language.GetPhrase(43)} {Language.GetPhrase(44)}", sourcePath));
             }
 
             if (acceleration < 1)
             {
-                $"[FFmpeg.Accelerate()]: The acceleration index {acceleration} is lower than it could be".Message();
-                return Task.FromException(new IndexOutOfRangeException($"The acceleration index {acceleration} is lower than it could be"));
+                $"[FFmpeg.Accelerate()]: The acceleration index {acceleration} {Language.GetPhrase(41)}".Message();
+                return Task.FromException(new IndexOutOfRangeException($"{Language.GetPhrase(45)} {acceleration} {Language.GetPhrase(41)}"));
             }
 
             string args = $"-y -hide_banner -i {sourcePath} -c:v libx264 -r 24 -vf setpts=PTS/{acceleration} -an {outputPath}";
@@ -62,7 +72,7 @@ namespace TimelapseApp
             accelerate.WaitForExit();
 
             if (!File.Exists(outputPath))
-                $"[FFmpeg.Accelerate()]: Video was not accelerated".Message();
+                $"[FFmpeg.Accelerate()]: {Language.GetPhrase(46)}".Message();
 
             return Task.FromResult(accelerate);
         }
@@ -71,8 +81,8 @@ namespace TimelapseApp
         {
             if (sourseVideos.Count < 1)
             {
-                $"[FFmpeg.Concat()]: There is no videos to concat".Message();
-                return Task.FromException(new FileNotFoundException("File was not found", outputPath));
+                $"[FFmpeg.Concat()]: {Language.GetPhrase(47)}".Message();
+                return Task.FromException(new FileNotFoundException($"{Language.GetPhrase(43)} {Language.GetPhrase(44)}", outputPath));
             }
             else
             {
@@ -80,8 +90,8 @@ namespace TimelapseApp
                 {
                     if (!File.Exists(sourseVideo))
                     {
-                        $"[FFmpeg.Concat()]: File {sourseVideo} was not found".Message();
-                        return Task.FromException(new FileNotFoundException("File was not found", sourseVideo));
+                        $"[FFmpeg.Concat()]: {Language.GetPhrase(43)} {sourseVideo} {Language.GetPhrase(44)}".Message();
+                        return Task.FromException(new FileNotFoundException($"{Language.GetPhrase(43)} {Language.GetPhrase(44)}", sourseVideo));
                     }
                 }
             }
@@ -92,7 +102,7 @@ namespace TimelapseApp
                 foreach (string video in sourseVideos)
                 {
                     sw.WriteLine($"file '{video}'");
-                    $"file '{video}'".Message();
+                    $"\t\tfile '{video}'".Message(false, false);
                 }
             }
 
@@ -114,7 +124,7 @@ namespace TimelapseApp
                     ("[FFmpeg.Concat.File.Delete()]: " + ex.Message).Message();
                 }
             }
-            else "[FFmpeg.Concat()]: The videos were not concated".Message();
+            else $"[FFmpeg.Concat()]: {Language.GetPhrase(48)}".Message();
 
             return Task.FromResult(concat);
         }
@@ -123,8 +133,8 @@ namespace TimelapseApp
         {
             if (!File.Exists(sourcePath))
             {
-                $"[FFmpeg.Repair()]: File {sourcePath} was not found".Message();
-                return Task.FromException(new FileNotFoundException("File was not found", sourcePath));
+                $"[FFmpeg.Repair()]: {Language.GetPhrase(43)} {sourcePath} {Language.GetPhrase(44)}".Message();
+                return Task.FromException(new FileNotFoundException($"{Language.GetPhrase(43)} {Language.GetPhrase(44)}", sourcePath));
             }
 
             string repairedVideoPath = Path.Combine(Temp.Path, "repairedVideo.mp4");
@@ -146,7 +156,7 @@ namespace TimelapseApp
                     ("[FFmpeg.Repair.File.Move()]: " + ex.Message).Message();
                 }
             }
-            else "[FFmpeg.Repair()]: The video was not repaired".Message();
+            else $"[FFmpeg.Repair()]: {Language.GetPhrase(49)}".Message();
 
             return Task.FromResult(repair.ExitCode);
         }

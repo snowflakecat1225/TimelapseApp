@@ -21,7 +21,7 @@ namespace TimelapseApp
 
             try
             {
-                if (!NetworkInterface.GetIsNetworkAvailable()) errorMessages.Add("There is no Internet connection");
+                if (!NetworkInterface.GetIsNetworkAvailable()) errorMessages.Add(Language.GetPhrase(30));
             }
             catch (Exception ex)
             {
@@ -39,7 +39,7 @@ namespace TimelapseApp
             else
             {
                 FFmpeg.Exists = false;
-                errorMessages.Add("There is not installed FFmpeg");
+                errorMessages.Add(Language.GetPhrase(31));
             }
 
             if (ffplaySearch.Count > 0)
@@ -47,7 +47,7 @@ namespace TimelapseApp
             else
             {
                 FFplay.Exists = false;
-                errorMessages.Add("There is not installed FFplay");
+                errorMessages.Add(Language.GetPhrase(32));
             }
 
             if (ffprobeSearch.Count > 0)
@@ -55,7 +55,7 @@ namespace TimelapseApp
             else
             {
                 FFprobe.Exists = false;
-                errorMessages.Add("There is not installed FFprobe");
+                errorMessages.Add(Language.GetPhrase(33));
             }
 
             directory = "/var/spool/cron";
@@ -72,8 +72,8 @@ namespace TimelapseApp
             }
 
             if (!string.IsNullOrEmpty(crontab.FirstOrDefault()))
-                Crontab.Path = crontab.FirstOrDefault();
-            else errorMessages.Add("There is not installed Crontab");
+                Crontab.Exists = true;
+            else errorMessages.Add(Language.GetPhrase(34));
 
             if (args.Length == 3 && args.ContainsOnlyNumbers())
             {

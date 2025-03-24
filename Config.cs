@@ -8,6 +8,7 @@ namespace TimelapseApp
     {
         public static readonly string Path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         private static readonly string _configPath = System.IO.Path.Combine(Path, $"{Process.GetCurrentProcess().ProcessName}.conf");
+        public static readonly bool Exists = File.Exists(_configPath);
 
         public static void Create(string sourceLink, string resultPath, bool timestampChecked, string tempPath = null)
         {

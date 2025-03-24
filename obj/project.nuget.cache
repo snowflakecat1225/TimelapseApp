@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "sAV4ljn9nZWqAmuIJYrdorUYclI4Z0QikhR2vNjIJN33GRtNlVq6VXRVqu65ZQ+eSL9A/1RUEgJI8BBUfvjJmQ==",
+  "dgSpecHash": "dKQJNZgFEiOVUwaRa01Dw3KCB3vZej6k5z5ZJGXNjhO5i0H5a8syov3tjrx0BcxtcM5jucjXK1SypgzSe7QZ9A==",
   "success": true,
-  "projectFilePath": "/home/snowflakecat/Documents/Programs/TimelapseApp/TimelapseApp.csproj",
+  "projectFilePath": "/home/snowflakecat/Документы/TimelapseApp/TimelapseApp.csproj",
   "expectedPackageFiles": [
     "/home/snowflakecat/.nuget/packages/atksharp/3.24.24.95/atksharp.3.24.24.95.nupkg.sha512",
     "/home/snowflakecat/.nuget/packages/cairosharp/3.24.24.95/cairosharp.3.24.24.95.nupkg.sha512",
@@ -10,9 +10,7 @@
     "/home/snowflakecat/.nuget/packages/giosharp/3.24.24.95/giosharp.3.24.24.95.nupkg.sha512",
     "/home/snowflakecat/.nuget/packages/glibsharp/3.24.24.95/glibsharp.3.24.24.95.nupkg.sha512",
     "/home/snowflakecat/.nuget/packages/gtksharp/3.24.24.95/gtksharp.3.24.24.95.nupkg.sha512",
-    "/home/snowflakecat/.nuget/packages/pangosharp/3.24.24.95/pangosharp.3.24.24.95.nupkg.sha512",
-    "/home/snowflakecat/.nuget/packages/microsoft.aspnetcore.app.ref/6.0.36/microsoft.aspnetcore.app.ref.6.0.36.nupkg.sha512",
-    "/home/snowflakecat/.nuget/packages/microsoft.netcore.app.host.linux-x64/6.0.36/microsoft.netcore.app.host.linux-x64.6.0.36.nupkg.sha512"
+    "/home/snowflakecat/.nuget/packages/pangosharp/3.24.24.95/pangosharp.3.24.24.95.nupkg.sha512"
   ],
   "logs": []
 }

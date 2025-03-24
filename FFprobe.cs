@@ -22,9 +22,8 @@ namespace TimelapseApp
         {
             public static double Duration(string videoPath)
             {
-                FFmpeg.Repair(videoPath);
                 startInfo.Arguments = $"-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {videoPath}";
-                try { return double.Parse(ProcessResult()); }
+                try { return double.Parse(ProcessResult().Replace('.', ',')); }
                 catch { return 0; }
             }
         }

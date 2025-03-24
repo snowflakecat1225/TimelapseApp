@@ -7,10 +7,8 @@ namespace TimelapseApp
 {
     public class Crontab
     {
-        public static string Path { get; set; }
-
-        public static bool FileExists => !string.IsNullOrEmpty(Path);
-
+        public static bool Exists { get; set; }
+        
         private static List<string> GetAll()
         {
             List<string> crons = new();

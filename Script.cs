@@ -31,14 +31,14 @@ namespace TimelapseApp
             Config.Delete();
             Temp.Delete();
             Crontab.Remove(Environment.ProcessPath);
-            "I have finished all my work. I hope we will meet again :3".Message('\n', false, false);
+            Language.GetPhrase(50).Message(Environment.NewLine, false, false);
         }
 
         public static void Run(int day, int days, int delay)
         {
             if (day <= days)
             {
-                $"I am waiting for {delay} seconds...".Message('\n');
+                $"{Language.GetPhrase(54)} {delay} {Language.GetPhrase(65)}...".Message(Environment.NewLine);
                 Task.Delay(delay * 1000).Wait();
 
                 string sourceLink = Config.GetSourceLink();
@@ -52,18 +52,18 @@ namespace TimelapseApp
                 int allTime = 16 * 60 * 60;
                 int videoTime = (int)((allTime / days) + Math.Round(allTime % days / (double)days));
 
-                "It is time to start!".Message('\n');
+                $"{Language.GetPhrase(66)} {videoTime} {Language.GetPhrase(65)}".Message(Environment.NewLine);
                 while (!File.Exists(videoPath))
                 {
-                    "Recording is started".Message();
+                    Language.GetPhrase(51).Message();
                     FFmpeg.Record(sourceLink, videoPath, videoTime);
-                    "Recording have finished".Message();
+                    Language.GetPhrase(52).Message();
                 }
                     
                 int realVideoTime = (int)FFprobe.GetInfo.Duration(videoPath);
                 if (realVideoTime < videoTime)
                 {
-                    "This video is shorter than required".Message('\n');
+                    $"{Language.GetPhrase(53)} ({realVideoTime} {Language.GetPhrase(65)})".Message(Environment.NewLine);
 
                     try
                     {
@@ -79,9 +79,9 @@ namespace TimelapseApp
                     {
                         string temporaryVideoPath = Path.Combine(Temp.Path, $"temporaryVideo{day}({attempt}).mkv");
 
-                        "Recording continues".Message();
+                        $"{Language.GetPhrase(55)} {attempt}".Message();
                         FFmpeg.Record(sourceLink, temporaryVideoPath, videoTime - realVideoTime);
-                        "Recording have finished again".Message();
+                        Language.GetPhrase(56).Message();
 
                         if (File.Exists(temporaryVideoPath))
                         {
@@ -102,9 +102,9 @@ namespace TimelapseApp
 
                         while (!File.Exists(videoPath))
                         {
-                            "Today's videos are concating".Message();
+                            Language.GetPhrase(57).Message();
                             FFmpeg.Concat(videos, videoPath);
-                            "Concating have done".Message();
+                            Language.GetPhrase(58).Message();
                         }
 
                         if ((int)FFprobe.GetInfo.Duration(videoPath) >= videoTime)
@@ -125,15 +125,15 @@ namespace TimelapseApp
                     }
                 }
                 
-                $"Yes, video file exists and it's duration is {videoTime}".Message('\n');
+                $"{Language.GetPhrase(59)} {videoTime} {Language.GetPhrase(65)}".Message(Environment.NewLine);
                 
                 double realShortVideoTime = FFprobe.GetInfo.Duration(shortVideoPath);
                 int acceleration = 96;
                 while (!(realShortVideoTime > 0 && (realShortVideoTime * 1.05 >= videoTime / acceleration || realShortVideoTime * 1.05 <= videoTime / acceleration)))
                 {
-                    "Accelerating is started".Message();
+                    Language.GetPhrase(60).Message();
                     FFmpeg.Accelerate(videoPath, shortVideoPath, acceleration);
-                    "Accelerating have done".Message();
+                    Language.GetPhrase(61).Message();
                     realShortVideoTime = FFprobe.GetInfo.Duration(shortVideoPath);
                     acceleration++;
                 }
@@ -166,15 +166,15 @@ namespace TimelapseApp
                 {
                     videos = new() { concatedVideoPath, shortVideoPath };
 
-                    "Yes, short video files exist, and I am starting to concat them".Message('\n');
+                    Language.GetPhrase(62).Message(Environment.NewLine);
                     
                     double realConcatedVideoTime = FFprobe.GetInfo.Duration(concatedVideoPath);
                     double realConcatedTodayVideoTime = FFprobe.GetInfo.Duration(concatedTodayVideoPath);
                     while (realConcatedTodayVideoTime <= realConcatedVideoTime)
                     {
-                        "Concating is started".Message();
+                        Language.GetPhrase(63).Message();
                         FFmpeg.Concat(videos, concatedTodayVideoPath);
-                        "Concating have done".Message();
+                        Language.GetPhrase(58).Message();
                         realConcatedTodayVideoTime = FFprobe.GetInfo.Duration(concatedTodayVideoPath);
                     }
 
@@ -207,7 +207,7 @@ namespace TimelapseApp
                     cronTime = cronTime.AddSeconds(videoTime * day);
                     string cron = $"{cronTime.Minute} {cronTime.Hour} * * * {Environment.ProcessPath} {day + 1} {days} {cronTime.Second}";
                     Crontab.Change(Environment.ProcessPath, cron);
-                    "Cron record have changed".Message('\n');
+                    Language.GetPhrase(64).Message(Environment.NewLine);
                 }
             }
             else
