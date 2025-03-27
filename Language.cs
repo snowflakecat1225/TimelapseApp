@@ -16,7 +16,7 @@ namespace TimelapseApp
                 "\tAs you can see right now, this is the main app window, but you can open another settings window." + Environment.NewLine +
                 "\tIf you just want to start you should insert RTSP-link to your camera, choose a path to save final video and write a number of days you need the program will work." + Environment.NewLine +
                 "\tBefore this I recommend you to check your RTSP-stream by clicking the \"Check stream\" button!" + Environment.NewLine +
-                "\tIf you want to add a timestamp to video (your camera may not have it by default) or change a path of temporary files you can do it by clicking the \"Settings\" button." + Environment.NewLine +
+                "\tIf you want to add a timestamp to video (your camera may not have it by default), (dis)allow to delete temporary files or change a path of temporary files you can do it by clicking the \"Settings\" button." + Environment.NewLine +
                 "\tYou can delete an existing program record in crontab by clicking the \"Clear\" button." + Environment.NewLine +
                 "\tYou can read program log in " + Environment.NewLine + Path.Combine(Config.Path, Process.GetCurrentProcess().ProcessName + "_log.txt")},
             { 1, "Help" },
@@ -84,7 +84,9 @@ namespace TimelapseApp
             { 63, "Concating is started" },
             { 64, "Cron record have changed" },
             { 65, "seconds" },
-            { 66, "It is time to start recording for"}
+            { 66, "It is time to start recording for"},
+            { 67, "Allow to delete\ntemporary files" }
+
         };
         private static readonly Dictionary<int, string> _ruPhrases = new()
         {
@@ -94,7 +96,7 @@ namespace TimelapseApp
                 "\tВ данный момент перед вами основное окно приложения, однако вы можете открыть другое окно с настройками." + Environment.NewLine +
                 "\tЕсли вы просто хотите запустить работу программы, вам следует вставить RTSP-ссылку на вашу камеру, выбрать путь сохранения готового видео и написать число дней, в течение которых скрипт должен работать." + Environment.NewLine +
                 "\tПеред началом рекомендую проверить ваш RTSP-поток с помощью нажатия кнопки \"Проверить поток\"!" + Environment.NewLine +
-                "\tЕсли вы хотите добавить время на видео (на вашей камере может не быть их по умолчанию) или изменить путь к временным файлам, вы можете сделать это с помощью нажатия кнопки \"Настройки\"" + Environment.NewLine +
+                "\tЕсли вы хотите добавить время на видео (на вашей камере может не быть их по умолчанию), разрешить/запретить удалять временные файлы или изменить путь к временным файлам, вы можете сделать это с помощью нажатия кнопки \"Настройки\"" + Environment.NewLine +
                 "\tУдалить существующую запись программы в crontab вы можете, нажав кнопку \"Очистить\"" + Environment.NewLine +
                 "\tВы можете изучить журнал событий программы в " + Environment.NewLine + Path.Combine(Config.Path, Process.GetCurrentProcess().ProcessName + "_log.txt")},
             { 1, "Помощь" },
@@ -162,7 +164,8 @@ namespace TimelapseApp
             { 63, "Обьединение началось" },
             { 64, "Запись Cron была изменена" },
             { 65, "секунд" },
-            { 66, "Пришло время начать запись на"}
+            { 66, "Пришло время начать запись на"},
+            { 67, "Разрешить удалять\nвременные файлы" }
         };
 
         public static string GetPhrase(int phraseNumber)

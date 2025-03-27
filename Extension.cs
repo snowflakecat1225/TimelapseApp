@@ -95,12 +95,12 @@ namespace TimelapseApp
             }
         }
 
-        public static int ExtractNumber(this string fileName, bool extractAttempt = false)
+        public static int ExtractNumber(this string fileName)
         {
             if (string.IsNullOrWhiteSpace(fileName))
                 $"[videos.Sort(ExtractNumber())]: {Language.GetPhrase(38)}".Message();
 
-            var match = extractAttempt ? Regex.Match(fileName, @"\((\d+)\)") : Regex.Match(fileName, @"(\d+)");
+            var match = Regex.Match(fileName, @"\((\d+)\)");
 
             if (match.Success)
                 return int.Parse(match.Groups[1].Value);

@@ -8,9 +8,9 @@ namespace TimelapseApp
 {
     public static class Script
     {
-        public static void Create(string sourceLink, string resultPath, bool timestampChecked, int days, string tempPath)
+        public static void Create(string sourceLink, string resultPath, bool timestampChecked, int days, string tempPath, bool allowToDeleteTemporaryFilesChecked)
         {
-            Config.Create(sourceLink, resultPath, timestampChecked, tempPath);
+            Config.Create(sourceLink, resultPath, timestampChecked, tempPath, allowToDeleteTemporaryFilesChecked);
             Temp.Create();
             Crontab.Add($"0 7 * * * {Environment.ProcessPath} 1 {days} 0");
         }
@@ -29,7 +29,8 @@ namespace TimelapseApp
                 }
             }
             Config.Delete();
-            Temp.Delete();
+            if (Config.GetAllowToDeleteTemporaryFilesChecked())
+                Temp.Delete();
             Crontab.Remove(Environment.ProcessPath);
             Language.GetPhrase(50).Message(Environment.NewLine, false, false);
         }
@@ -95,8 +96,8 @@ namespace TimelapseApp
                     {
                         videos.Sort((a, b) => 
                         {
-                            int numA = a.ExtractNumber(true);
-                            int numB = b.ExtractNumber(true);
+                            int numA = a.ExtractNumber();
+                            int numB = b.ExtractNumber();
                             return numA.CompareTo(numB);
                         });
 
@@ -107,7 +108,7 @@ namespace TimelapseApp
                             Language.GetPhrase(58).Message();
                         }
 
-                        if ((int)FFprobe.GetInfo.Duration(videoPath) >= videoTime)
+                        if ((int)FFprobe.GetInfo.Duration(videoPath) >= videoTime && Config.GetAllowToDeleteTemporaryFilesChecked())
                         {
                             videos = Directory.GetFiles(Temp.Path, "*temporaryVideo*", SearchOption.TopDirectoryOnly).ToList();
                             foreach (string video in videos)
@@ -138,7 +139,7 @@ namespace TimelapseApp
                     acceleration++;
                 }
 
-                if (File.Exists(videoPath))
+                if (File.Exists(videoPath) && Config.GetAllowToDeleteTemporaryFilesChecked())
                 {
                     try
                     {
@@ -178,16 +179,19 @@ namespace TimelapseApp
                         realConcatedTodayVideoTime = FFprobe.GetInfo.Duration(concatedTodayVideoPath);
                     }
 
-                    videos = Directory.GetFiles(Temp.Path, "*shortVideo*", SearchOption.TopDirectoryOnly).ToList();
-                    foreach (string video in videos)
+                    if (Config.GetAllowToDeleteTemporaryFilesChecked())
                     {
-                        try
+                        videos = Directory.GetFiles(Temp.Path, "*shortVideo*", SearchOption.TopDirectoryOnly).ToList();
+                        foreach (string video in videos)
                         {
-                            File.Delete(video);
-                        }
-                        catch (Exception ex)
-                        {
-                            ("[Script.File.Delete()]: " + ex.Message).Message();
+                            try
+                            {
+                                File.Delete(video);
+                            }
+                            catch (Exception ex)
+                            {
+                                ("[Script.File.Delete()]: " + ex.Message).Message();
+                            }
                         }
                     }
 

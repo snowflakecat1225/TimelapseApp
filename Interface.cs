@@ -11,6 +11,7 @@ namespace TimelapseApp
     {
         public static bool IsInitialised { get; set; } = false;
         private static bool _timestampChecked = Config.GetTimestampChecked();
+        private static bool _allowToDeleteTemporaryFilesChecked = Config.GetAllowToDeleteTemporaryFilesChecked();
 
         private static string _tempPath = Temp.Path;
 
@@ -275,24 +276,30 @@ namespace TimelapseApp
                     DialogFlags.Modal,
                     MessageType.Question,
                     ButtonsType.YesNo,
-                    Language.GetPhrase(13));
-                int response = clearConfirmationDialog.Run();
-                clearConfirmationDialog.Destroy();
+                    Language.GetPhrase(13))
+                {
+                    Title = Language.GetPhrase(35)
+                };
                 
-                if (response == (int)ResponseType.Yes)
+                if (clearConfirmationDialog.Run() == (int)ResponseType.Yes)
                 {
                     MessageDialog clearInformationDialog = new(
                         Windows.Main,
                         DialogFlags.Modal,
                         MessageType.Info,
                         ButtonsType.Ok,
-                        Language.GetPhrase(14));
+                        Language.GetPhrase(14))
+                    {
+                        Title = Language.GetPhrase(35)
+                    };
                     clearInformationDialog.Run();
                     clearInformationDialog.Destroy();
 
                     Script.Delete();
                     _clearButton.Sensitive = false;
                 }
+
+                clearConfirmationDialog.Destroy();
             }
 
             private static void StartButton_Clicked(object sender, EventArgs e)
@@ -324,19 +331,16 @@ namespace TimelapseApp
                     return;
                 }
                 
-                Script.Create(_rtspEntry.Text, _saveEntry.Text, _timestampChecked, days, _tempPath);
+                Script.Create(_rtspEntry.Text, _saveEntry.Text, _timestampChecked, days, _tempPath, _allowToDeleteTemporaryFilesChecked);
                 _clearButton.Sensitive = true;
                 MessageDialog messageDialog = new(
                     Windows.Main,
                     DialogFlags.Modal,
                     MessageType.Info,
                     ButtonsType.Close,
-                    $"{Language.GetPhrase(19)} {days} {Language.GetPhrase(20)}")
-                {
-                    Title = Language.GetPhrase(21)
-                };
+                    $"{Language.GetPhrase(19)} {days} {Language.GetPhrase(20)}");
+                messageDialog.Title = Language.GetPhrase(21);
                 messageDialog.Run();
-    
                 messageDialog.Destroy();
             }
 
@@ -378,6 +382,16 @@ namespace TimelapseApp
                 };
                 addTimestampButton.Toggled += delegate { _timestampChecked = addTimestampButton.Active; };
                 box.Add(addTimestampButton);
+
+
+                CheckButton allowToDeleteTempFilesButton = new()
+                {
+                    Halign = Align.Center,
+                    Label = Language.GetPhrase(67),
+                    Active = _allowToDeleteTemporaryFilesChecked
+                };
+                allowToDeleteTempFilesButton.Toggled += delegate { _allowToDeleteTemporaryFilesChecked = allowToDeleteTempFilesButton.Active; };
+                box.Add(allowToDeleteTempFilesButton);
 
 
                 Box configBox = new(Orientation.Vertical, 10);
@@ -439,7 +453,6 @@ namespace TimelapseApp
                     messageDialog.Destroy();
                     isThisTheFirstShowing = false;
                 }
-                
             }
 
             private static void OpenFolderViewButton_Clicked(object sender, EventArgs e)

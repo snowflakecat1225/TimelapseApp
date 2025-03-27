@@ -10,7 +10,7 @@ namespace TimelapseApp
         private static readonly string _configPath = System.IO.Path.Combine(Path, $"{Process.GetCurrentProcess().ProcessName}.conf");
         public static readonly bool Exists = File.Exists(_configPath);
 
-        public static void Create(string sourceLink, string resultPath, bool timestampChecked, string tempPath = null)
+        public static void Create(string sourceLink, string resultPath, bool timestampChecked, string tempPath = null, bool allowToDeleteTemporaryFilesChecked = true)
         {
             if (tempPath == System.IO.Path.Combine(System.IO.Path.GetTempPath(), Process.GetCurrentProcess().ProcessName)) tempPath = null;
 
@@ -18,10 +18,11 @@ namespace TimelapseApp
             {
                 using StreamWriter sw = new(_configPath);
                 sw.Write(
-                    sourceLink + "\n" +
-                    resultPath + "\n" +
-                    timestampChecked + "\n" +
-                    tempPath
+                    sourceLink + Environment.NewLine +
+                    resultPath + Environment.NewLine +
+                    timestampChecked + Environment.NewLine +
+                    tempPath + Environment.NewLine +
+                    allowToDeleteTemporaryFilesChecked
                 );
             }
             catch (Exception ex)
@@ -37,7 +38,7 @@ namespace TimelapseApp
                 try
                 {
                     using StreamReader sr = new(_configPath);
-                    string[] configs = sr.ReadToEnd().Split("\n");
+                    string[] configs = sr.ReadToEnd().Split(Environment.NewLine);
                     return configs.Length == 4 ? configs[index] : string.Empty;
                 }
                 catch (Exception ex)
@@ -67,6 +68,14 @@ namespace TimelapseApp
             };
         }
         public static string GetTempPath() => GetConfigString(3);
+        public static bool GetAllowToDeleteTemporaryFilesChecked()
+        {
+            return GetConfigString(4).ToLower() switch
+            {
+                "false" or "0" => false,
+                _ => true,
+            };
+        }
 
         public static void Delete()
         {
