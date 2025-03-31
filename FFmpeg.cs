@@ -44,8 +44,7 @@ namespace TimelapseApp
 
             if (!File.Exists(outputPath))
                 $"[FFmpeg.Record()]: {Language.GetPhrase(42)}".Message();
-            else if (Math.Abs(recordingTime - workTime) <= Math.Abs(recordingTime * 5 / 100d))
-                Repair(outputPath);
+            else Repair(outputPath);
 
             return Task.FromResult(record);
         }
@@ -106,7 +105,7 @@ namespace TimelapseApp
                 }
             }
 
-            string args = $"-y -hide_banner -f concat -safe 0 -i {concatFilePath} -c copy {outputPath}";
+            string args = $"-y -hide_banner -f concat -safe 0 -i {concatFilePath} -c copy -shortest {outputPath}";
 
             using Process concat = new();
             concat.StartInfo = new("ffmpeg", args);

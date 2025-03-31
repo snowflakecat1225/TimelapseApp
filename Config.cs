@@ -39,7 +39,7 @@ namespace TimelapseApp
                 {
                     using StreamReader sr = new(_configPath);
                     string[] configs = sr.ReadToEnd().Split(Environment.NewLine);
-                    return configs.Length == 4 ? configs[index] : string.Empty;
+                    return configs.Length == 5 ? configs[index] : string.Empty;
                 }
                 catch (Exception ex)
                 {
@@ -49,6 +49,7 @@ namespace TimelapseApp
                         1 => "GetResultPath()",
                         2 => "GetTimestampChecked()",
                         3 => "GetTempPath()",
+                        4 => "GetAllowToDeleteTemporaryFilesChecked()",
                         _ => string.Empty,
                     };
                     ($"[Config.{method}]: " + ex.Message).Message();

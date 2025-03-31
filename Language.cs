@@ -85,7 +85,8 @@ namespace TimelapseApp
             { 64, "Cron record have changed" },
             { 65, "seconds" },
             { 66, "It is time to start recording for"},
-            { 67, "Allow to delete\ntemporary files" }
+            { 67, "Allow to delete\ntemporary files" },
+            { 68, "Deleting files is not allowed" }
 
         };
         private static readonly Dictionary<int, string> _ruPhrases = new()
@@ -165,7 +166,8 @@ namespace TimelapseApp
             { 64, "Запись Cron была изменена" },
             { 65, "секунд" },
             { 66, "Пришло время начать запись на"},
-            { 67, "Разрешить удалять\nвременные файлы" }
+            { 67, "Разрешить удалять\nвременные файлы" },
+            { 68, "Удалять файлы запрещено" }
         };
 
         public static string GetPhrase(int phraseNumber)

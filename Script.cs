@@ -19,13 +19,28 @@ namespace TimelapseApp
         {
             if (File.Exists(Path.Combine(Temp.Path, "concatedVideo.mp4")))
             {
-                try
+                if (Config.GetAllowToDeleteTemporaryFilesChecked())
                 {
-                    File.Move(Path.Combine(Temp.Path, "concatedVideo.mp4"), Path.Combine(Config.GetResultPath(), $"Timelapse({DateTime.Now}).mp4"));
+                    try
+                    {
+                        File.Move(Path.Combine(Temp.Path, "concatedVideo.mp4"), Path.Combine(Config.GetResultPath(), $"Timelapse({DateTime.Now}).mp4"));
+                    }
+                    catch (Exception ex)
+                    {
+                        ("[Script.File.Move()]: " + ex.Message).Message();
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    ("[Script.File.Move()]: " + ex.Message).Message();
+                    Language.GetPhrase(68).Message();
+                    try
+                    {
+                        File.Copy(Path.Combine(Temp.Path, "concatedVideo.mp4"), Path.Combine(Config.GetResultPath(), $"Timelapse({DateTime.Now}).mp4"));
+                    }
+                    catch (Exception ex)
+                    {
+                        ("[Script.File.Copy()]: " + ex.Message).Message();
+                    }
                 }
             }
             Config.Delete();
@@ -66,16 +81,32 @@ namespace TimelapseApp
                 {
                     $"{Language.GetPhrase(53)} ({realVideoTime} {Language.GetPhrase(65)})".Message(Environment.NewLine);
 
-                    try
+                    float attempt = 2;
+
+                    if (realVideoTime != 0)
                     {
-                        File.Move(videoPath, Path.Combine(Temp.Path, $"temporaryVideo{day}(1).mkv"), true);
+                        try
+                        {
+                            File.Move(videoPath, Path.Combine(Temp.Path, $"temporaryVideo{day}(1).mkv"), true);
+                        }
+                        catch (Exception ex)
+                        {
+                            ("[Script.File.Move()]: " + ex.Message).Message();
+                        }
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        ("[Script.File.Move()]: " + ex.Message).Message();
+                        try
+                        {
+                            File.Delete(videoPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            ("[Script.File.Delete()]: " + ex.Message).Message();
+                        }
+                        attempt = 1;
                     }
 
-                    float attempt = 2;
                     while (realVideoTime < videoTime)
                     {
                         string temporaryVideoPath = Path.Combine(Temp.Path, $"temporaryVideo{day}({attempt}).mkv");
@@ -101,14 +132,14 @@ namespace TimelapseApp
                             return numA.CompareTo(numB);
                         });
 
-                        while (!File.Exists(videoPath))
+                        while (FFprobe.GetInfo.Duration(videoPath) != videoTime) 
                         {
                             Language.GetPhrase(57).Message();
                             FFmpeg.Concat(videos, videoPath);
                             Language.GetPhrase(58).Message();
                         }
 
-                        if ((int)FFprobe.GetInfo.Duration(videoPath) >= videoTime && Config.GetAllowToDeleteTemporaryFilesChecked())
+                        if (Config.GetAllowToDeleteTemporaryFilesChecked())
                         {
                             videos = Directory.GetFiles(Temp.Path, "*temporaryVideo*", SearchOption.TopDirectoryOnly).ToList();
                             foreach (string video in videos)
@@ -123,6 +154,7 @@ namespace TimelapseApp
                                 }
                             }
                         }
+                        else Language.GetPhrase(68).Message();
                     }
                 }
                 
@@ -130,7 +162,7 @@ namespace TimelapseApp
                 
                 double realShortVideoTime = FFprobe.GetInfo.Duration(shortVideoPath);
                 int acceleration = 96;
-                while (!(realShortVideoTime > 0 && (realShortVideoTime * 1.05 >= videoTime / acceleration || realShortVideoTime * 1.05 <= videoTime / acceleration)))
+                while (!(realShortVideoTime > 0 && Math.Abs(realShortVideoTime - videoTime / (double)acceleration) <= Math.Abs(videoTime * 5 / acceleration * 100d)))
                 {
                     Language.GetPhrase(60).Message();
                     FFmpeg.Accelerate(videoPath, shortVideoPath, acceleration);
@@ -139,69 +171,106 @@ namespace TimelapseApp
                     acceleration++;
                 }
 
-                if (File.Exists(videoPath) && Config.GetAllowToDeleteTemporaryFilesChecked())
+                if (File.Exists(videoPath))
                 {
-                    try
+                    if (Config.GetAllowToDeleteTemporaryFilesChecked())
                     {
-                        File.Delete(videoPath);
+                        try
+                        {
+                            File.Delete(videoPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            ("[Script.File.Delete()]: " + ex.Message).Message();
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        ("[Script.File.Delete()]: " + ex.Message).Message();
-                    }
+                    else Language.GetPhrase(68).Message();
                 }
 
                 if (day == 1)
                 {
-                    try
-                    {
-                        File.Move(shortVideoPath, concatedVideoPath, true);
-                    }
-                    catch (Exception ex)
-                    {
-                        ("[Script.File.Move()]: " + ex.Message).Message();
-                    }
-                }
-                
-                if (File.Exists(shortVideoPath) && File.Exists(concatedVideoPath))
-                {
-                    videos = new() { concatedVideoPath, shortVideoPath };
-
-                    Language.GetPhrase(62).Message(Environment.NewLine);
-                    
-                    double realConcatedVideoTime = FFprobe.GetInfo.Duration(concatedVideoPath);
-                    double realConcatedTodayVideoTime = FFprobe.GetInfo.Duration(concatedTodayVideoPath);
-                    while (realConcatedTodayVideoTime <= realConcatedVideoTime)
-                    {
-                        Language.GetPhrase(63).Message();
-                        FFmpeg.Concat(videos, concatedTodayVideoPath);
-                        Language.GetPhrase(58).Message();
-                        realConcatedTodayVideoTime = FFprobe.GetInfo.Duration(concatedTodayVideoPath);
-                    }
-
                     if (Config.GetAllowToDeleteTemporaryFilesChecked())
                     {
-                        videos = Directory.GetFiles(Temp.Path, "*shortVideo*", SearchOption.TopDirectoryOnly).ToList();
-                        foreach (string video in videos)
+                        try
+                        {
+                            File.Move(shortVideoPath, concatedVideoPath, true);
+                        }
+                        catch (Exception ex)
+                        {
+                            ("[Script.File.Move()]: " + ex.Message).Message();
+                        }
+                    }
+                    else
+                    {
+                        Language.GetPhrase(68).Message();
+                        try
+                        {
+                            File.Copy(shortVideoPath, concatedVideoPath, true);
+                        }
+                        catch (Exception ex)
+                        {
+                            ("[Script.File.Copy()]: " + ex.Message).Message();
+                        }
+                    }
+                }
+                else
+                {
+                    if (File.Exists(shortVideoPath) && File.Exists(concatedVideoPath))
+                    {
+                        videos = new() { concatedVideoPath, shortVideoPath };
+
+                        Language.GetPhrase(62).Message(Environment.NewLine);
+                        
+                        double realConcatedVideoTime = FFprobe.GetInfo.Duration(concatedVideoPath);
+                        double realConcatedTodayVideoTime = FFprobe.GetInfo.Duration(concatedTodayVideoPath);
+                        while (realConcatedTodayVideoTime <= realConcatedVideoTime)
+                        {
+                            Language.GetPhrase(63).Message();
+                            FFmpeg.Concat(videos, concatedTodayVideoPath);
+                            Language.GetPhrase(58).Message();
+                            realConcatedTodayVideoTime = FFprobe.GetInfo.Duration(concatedTodayVideoPath);
+                        }
+
+                        if (Config.GetAllowToDeleteTemporaryFilesChecked())
+                        {
+                            videos = Directory.GetFiles(Temp.Path, "*shortVideo*", SearchOption.TopDirectoryOnly).ToList();
+                            foreach (string video in videos)
+                            {
+                                try
+                                {
+                                    File.Delete(video);
+                                }
+                                catch (Exception ex)
+                                {
+                                    ("[Script.File.Delete()]: " + ex.Message).Message();
+                                }
+                            }
+                        }
+                        else Language.GetPhrase(68).Message();
+
+                        if (Config.GetAllowToDeleteTemporaryFilesChecked())
                         {
                             try
                             {
-                                File.Delete(video);
+                                File.Move(concatedTodayVideoPath, concatedVideoPath, true);
                             }
                             catch (Exception ex)
                             {
-                                ("[Script.File.Delete()]: " + ex.Message).Message();
+                                ("[Script.File.Move()]: " + ex.Message).Message();
                             }
                         }
-                    }
-
-                    try
-                    {
-                        File.Move(concatedTodayVideoPath, concatedVideoPath, true);
-                    }
-                    catch (Exception ex)
-                    {
-                        ("[Script.File.Move()]: " + ex.Message).Message();
+                        else
+                        {
+                            Language.GetPhrase(68).Message();
+                            try
+                            {
+                                File.Copy(concatedTodayVideoPath, concatedVideoPath, true);
+                            }
+                            catch (Exception ex)
+                            {
+                                ("[Script.File.Copy()]: " + ex.Message).Message();
+                            }
+                        }
                     }
                 }
 
