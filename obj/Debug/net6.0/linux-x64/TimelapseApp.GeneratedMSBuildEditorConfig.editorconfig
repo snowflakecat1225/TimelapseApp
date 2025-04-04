@@ -10,4 +10,4 @@ build_property.EnableSingleFileAnalyzer = true
 build_property.EnableTrimAnalyzer = 
 build_property.IncludeAllContentForSelfExtract = 
 build_property.RootNamespace = TimelapseApp
-build_property.ProjectDir = /home/snowflakecat/Документы/TimelapseApp/
+build_property.ProjectDir = /home/snowflakecat/Documents/Programs/TimelapseApp/

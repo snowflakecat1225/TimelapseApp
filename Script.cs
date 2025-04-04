@@ -283,10 +283,9 @@ namespace TimelapseApp
                     Language.GetPhrase(64).Message(Environment.NewLine);
                 }
             }
-            else
-            {
+            
+            if (day == days)
                 Delete();
-            }
         }
     }
 }

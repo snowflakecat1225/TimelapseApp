@@ -1,2 +1,0 @@
-/home/snowflakecat/Документы/TimelapseApp/bin/Debug/net6.0/linux-x64/publish/TimelapseApp.pdb
-/home/snowflakecat/Документы/TimelapseApp/bin/Debug/net6.0/linux-x64/publish/TimelapseApp
