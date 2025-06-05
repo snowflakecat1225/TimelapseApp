@@ -21,11 +21,12 @@ namespace TimelapseApp
 
             try
             {
-                if (!NetworkInterface.GetIsNetworkAvailable()) errorMessages.Add(Language.GetPhrase(30));
+                if (new Ping().Send("www.google.com").Status != IPStatus.Success)
+                    errorMessages.Add(Language.GetPhrase(30));
             }
-            catch (Exception ex)
+            catch
             {
-                errorMessages.Add($"[NetworkInterface.GetIsNetworkAvailable()]: {ex.Message}");
+                errorMessages.Add(Language.GetPhrase(30));
             }
 
             string directory = "/bin";
@@ -63,11 +64,11 @@ namespace TimelapseApp
             List<string> crontab;
             try
             {
-                crontab = Directory.EnumerateFiles(directory, Environment.UserName, SearchOption.AllDirectories).ToList();
+                crontab = Directory.EnumerateFiles(directory, "Environment.UserName", SearchOption.AllDirectories).ToList();
             }
             catch
             {
-                Process.Start(new ProcessStartInfo("pkexec", $"bash -c \"chown -R {Environment.UserName} {directory}\"")).WaitForExit();
+                //Process.Start(new ProcessStartInfo("pkexec", $"bash -c \"chown -R {Environment.UserName} {directory}\"")).WaitForExit();
                 crontab = Directory.EnumerateFiles(directory, Environment.UserName, SearchOption.AllDirectories).ToList();
             }
 
@@ -90,10 +91,17 @@ namespace TimelapseApp
             {
                 Application.Init();
                 Interface.IsInitialised = true;
-                foreach (string error in errorMessages)
-                    error.Message(false, false);
-                Interface.Init();
-                Application.Run();
+                if (errorMessages.Count == 0)
+                {
+                    Interface.Init();
+                    Application.Run();
+                }
+                else
+                {
+                    foreach (string error in errorMessages)
+                        error.Message(false, false);
+                    Application.Quit();
+                }
             }
         }
     }
